@@ -193,7 +193,15 @@ bun run mp4toascii -- --input=video.mp4 --mode=fusion --cols=120 --fps=10 --outp
 bun run mp4toascii -- --input=video.mp4 --mode=mono --cols=80 --invert --output=ascii.html
 ```
 
-Options: `--cols`, `--rows`, `--fps`, `--mode=mono|fusion`, `--output` (`.html`, `.mp4`, `.txt`, or `-` for terminal), `--invert`, `--color`, `--text=<source.txt>`, `--max-frames`.
+Share as a portable `.ascv` text file (typically 10–50KB):
+
+```sh
+bun run mp4toascii -- --input=video.mp4 --output=video.ascv
+bun run mp4toascii -- --play=video.ascv                        # terminal playback
+bun run mp4toascii -- --play=video.ascv --output=player.html   # generate HTML player
+```
+
+Options: `--cols`, `--rows`, `--fps`, `--mode=mono|fusion`, `--output` (`.ascv`, `.html`, `.mp4`, `.txt`, or `-` for terminal), `--invert`, `--color`, `--text=<source.txt>`, `--max-frames`, `--play=<file.ascv>`.
 
 See [docs/mp4toascii-plan.md](docs/mp4toascii-plan.md) for the roadmap.
 

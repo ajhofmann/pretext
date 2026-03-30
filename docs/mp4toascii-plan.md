@@ -20,8 +20,21 @@ This document describes the phased plan for turning the current prototype into a
 | Fusion text layout | `shared/mp4toascii/fusion.ts` | Working — `layoutTextPositions()`, `fuseFrameWithText()` |
 | Output renderers | `shared/mp4toascii/render.ts` | Working — terminal ANSI, HTML, MP4 re-render |
 | CLI | `scripts/mp4toascii.ts` | Working — `bun run mp4toascii` |
+| .ascv format | `shared/mp4toascii/ascv.ts` | Working — encode, parse, play, convert to HTML |
 
 Dependencies: `ffmpeg` + `ffprobe` on PATH, `@napi-rs/canvas` for pixel buffer I/O, `dist/layout.js` for fusion mode (run `bun run build:package` first).
+
+### .ascv shareable format
+
+The `.ascv` format is a portable, gzip-compressed text container for ASCII video. Encode a video once, share the tiny `.ascv` file (typically 10–50KB), and anyone can play it back without the source video or any video processing tools.
+
+Format: `ASCV1` magic (5 bytes) + gzip payload. The payload is line-delimited text: a header line with metadata (cols, rows, fps, frame count, mode, color flag), then frame blocks. Each frame stores character lines with tab-separated hex brightness values and optional hex RGB color channels.
+
+```sh
+bun run mp4toascii -- --input=video.mp4 --mode=mono --output=video.ascv
+bun run mp4toascii -- --play=video.ascv
+bun run mp4toascii -- --play=video.ascv --output=player.html
+```
 
 ---
 

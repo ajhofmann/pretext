@@ -66,7 +66,8 @@ mp4toascii notes:
 - See `docs/mp4toascii-plan.md` for the phased roadmap.
 - Requires `ffmpeg` and `ffprobe` on PATH, plus a built Pretext package (`bun run build:package`) for fusion mode.
 - Two modes: `mono` (classic brightness ramp) and `fusion` (Pretext-powered text-image fusion where real prose is brightness-modulated by the video).
-- Output targets: terminal (ANSI), self-contained HTML with playback, MP4 re-render.
+- Output targets: `.ascv` (shareable text container), terminal (ANSI), self-contained HTML with playback, MP4 re-render.
+- `.ascv` is a portable gzip-compressed text format. Encode once, share the file (~10–50KB), play back anywhere with `--play=file.ascv`.
 - Source modules live in `shared/mp4toascii/`; CLI entry point is `scripts/mp4toascii.ts`.
 
 ## Current Sources Of Truth
