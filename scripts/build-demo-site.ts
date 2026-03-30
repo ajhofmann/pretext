@@ -12,6 +12,7 @@ const entrypoints = [
   'pages/demos/justification-comparison.html',
   'pages/demos/masonry/index.html',
   'pages/demos/rich-note.html',
+  'pages/demos/text-video-studio.html',
   'pages/demos/variable-typographic-ascii.html',
 ]
 
@@ -37,6 +38,7 @@ const targets = [
   { source: 'justification-comparison.html', target: 'justification-comparison/index.html' },
   { source: 'masonry/index.html', target: 'masonry/index.html' },
   { source: 'rich-note.html', target: 'rich-note/index.html' },
+  { source: 'text-video-studio.html', target: 'text-video-studio/index.html' },
   { source: 'variable-typographic-ascii.html', target: 'variable-typographic-ascii/index.html' },
 ]
 
