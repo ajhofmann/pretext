@@ -14,6 +14,7 @@ bun run text-video:init      # scaffold a rich semantic text-video project
 bun run text-video:encode    # pack project.json and local assets into a .ptxv bundle
 bun run text-video:decode    # unpack a .ptxv bundle back to JSON
 bun run text-video:render    # render SVG/PNG frames or MP4 from a text-video project or bundle
+bun run mp4toascii           # convert video to ASCII text art (mono or Pretext fusion mode)
 bun run accuracy-check       # Chrome browser sweep
 bun run accuracy-check:safari
 bun run accuracy-check:firefox
@@ -43,6 +44,11 @@ Useful pages:
 - `/demos/bubbles`
 - `/demos/dynamic-layout`
 - `/demos/justification-comparison`
+- `/demos/text-video-studio`
+- `/demos/editorial-engine`
+- `/demos/masonry`
+- `/demos/rich-note`
+- `/demos/variable-typographic-ascii`
 - `/accuracy`
 - `/benchmark`
 - `/corpus`
@@ -53,8 +59,15 @@ Text-video bootstrap notes:
 - `.ptxv` bundles are versioned and can embed local image/font assets alongside the project JSON.
 - Rendering scripts use Node + `@napi-rs/canvas` to provide `OffscreenCanvas` for Pretext measurement.
 - PNG rasterization uses `@resvg/resvg-js`; MP4 assembly shells out to `ffmpeg`.
-- The browser preview demo is available at `/demos/text-video-studio`.
+- The browser preview demo is available at `/demos/text-video-studio`. It uses a browser-compatible renderer (`shared/text-video/render-browser.ts`) that avoids the Node-only native module dependencies.
 - In environments where Bun is unavailable on PATH but Node/npm are, `npx --yes bun ...` is a practical fallback for `package-smoke-test` and demo-site builds.
+
+mp4toascii notes:
+- See `docs/mp4toascii-plan.md` for the phased roadmap.
+- Requires `ffmpeg` and `ffprobe` on PATH, plus a built Pretext package (`bun run build:package`) for fusion mode.
+- Two modes: `mono` (classic brightness ramp) and `fusion` (Pretext-powered text-image fusion where real prose is brightness-modulated by the video).
+- Output targets: terminal (ANSI), self-contained HTML with playback, MP4 re-render.
+- Source modules live in `shared/mp4toascii/`; CLI entry point is `scripts/mp4toascii.ts`.
 
 ## Current Sources Of Truth
 

@@ -133,6 +133,10 @@ These gaps remain after the current implementation pass:
 - no automated browser UI test for the studio page
 - static site build still depends on Bun being present in PATH in the environment
 
+## Resolved gaps
+
+- The browser preview/studio demo (`/demos/text-video-studio`) now works. A browser-compatible SVG renderer (`shared/text-video/render-browser.ts`) avoids the Node-only native module imports. The studio TS imports directly from `sample.ts`/`schema.ts` instead of the `runtime.ts` barrel to prevent bundler errors from `@resvg/resvg-js` and `@napi-rs/canvas` transitive deps. HTML element IDs are aligned with the TypeScript.
+
 ## Near-term next steps
 
 ### 1. Richer timeline/composition model
@@ -185,7 +189,7 @@ The current implementation has been exercised with:
 5. frame rendering from JSON and bundled `.ptxv` (`npm run text-video:render`)
 6. package smoke test through Bun invoked via `npx --yes bun`
 
-The site build was attempted via `npx --yes bun run scripts/build-demo-site.ts` and currently fails because the build pipeline tries to bundle Node-only `.node` native dependencies into the browser build.
+The site build was attempted via `npx --yes bun run scripts/build-demo-site.ts` and may still fail if the build pipeline tries to bundle Node-only `.node` native dependencies into the browser build. The text-video-studio demo itself now works in the browser via a dedicated browser-compatible renderer.
 
 ## Example workflow
 

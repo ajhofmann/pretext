@@ -179,6 +179,24 @@ The generated sample project demonstrates:
 
 See [docs/text-video-engine-plan.md](docs/text-video-engine-plan.md) for the current architecture, capabilities, and remaining gaps.
 
+## mp4toascii
+
+Convert any video to ASCII text art. Two rendering modes:
+
+**Mono mode** — classic monospace ASCII art. Maps pixel brightness to characters from a density ramp.
+
+**Fusion mode** — the Pretext-powered mode. Takes real readable text and lays it out using `prepareWithSegments()` + `layoutWithLines()`. Each character's brightness is sampled from the corresponding video frame pixel. The result is readable prose that visually forms the video image through per-character opacity modulation.
+
+```sh
+bun run build:package
+bun run mp4toascii -- --input=video.mp4 --mode=fusion --cols=120 --fps=10 --output=output.html
+bun run mp4toascii -- --input=video.mp4 --mode=mono --cols=80 --invert --output=ascii.html
+```
+
+Options: `--cols`, `--rows`, `--fps`, `--mode=mono|fusion`, `--output` (`.html`, `.mp4`, `.txt`, or `-` for terminal), `--invert`, `--color`, `--text=<source.txt>`, `--max-frames`.
+
+See [docs/mp4toascii-plan.md](docs/mp4toascii-plan.md) for the roadmap.
+
 ## Develop
 
 See [DEVELOPMENT.md](DEVELOPMENT.md) for the dev setup and commands.
