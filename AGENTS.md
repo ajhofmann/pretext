@@ -28,6 +28,13 @@ See `DEVELOPMENT.md` for the current command surface and packaging/release check
 - `pages/demos/index.html` — public static demo landing page used as the GitHub Pages site root
 - `pages/demos/bubbles.ts` — bubble shrinkwrap demo using the rich non-materializing line-range walker
 - `pages/demos/dynamic-layout.ts` — fixed-height editorial spread with a continuous two-column flow, obstacle-aware title routing, and live logo-driven reflow
+- `shared/text-video/render-browser.ts` — browser-compatible SVG renderer for the text-video-studio demo (avoids Node-only native module imports)
+- `shared/mp4toascii/extract.ts` — ffmpeg frame extraction to raw pixel buffers for mp4toascii
+- `shared/mp4toascii/ascii-map.ts` — brightness-to-character mapping (mono ramp, proportional palette)
+- `shared/mp4toascii/fusion.ts` — Pretext-powered text layout + per-character video brightness sampling
+- `shared/mp4toascii/render.ts` — mp4toascii output renderers (terminal ANSI, HTML, MP4 re-render)
+- `scripts/mp4toascii.ts` — CLI entry point for mp4toascii
+- `docs/mp4toascii-plan.md` — phased roadmap for mp4toascii development
 
 ### Implementation notes
 
@@ -95,6 +102,16 @@ See `DEVELOPMENT.md` for the current command surface and packaging/release check
 - Current line-fit tolerance is `0.005` for Chromium/Gecko and `1/64` for Safari/WebKit. That bump was justified by the remaining Arabic fine-width field and did not move the solved browser corpus or Gatsby coarse canary.
 - Refresh `accuracy/chrome.json`, `accuracy/safari.json`, and `accuracy/firefox.json` when a diff changes the browser sweep methodology or the main text engine behavior (`src/analysis.ts`, `src/measurement.ts`, `src/line-break.ts`, `src/layout.ts`, `src/bidi.ts`, or `pages/accuracy.ts`).
 - Refresh `corpora/representative.json` when a diff intentionally changes one of the tracked representative canaries or their canonical anchor behavior. Keep it compact: anchors and designated fragile-width sentinels, not every exploratory sweep result.
+
+### mp4toascii notes
+
+- mp4toascii converts video to ASCII text art. Two modes: `mono` (brightness ramp) and `fusion` (Pretext-powered text-image fusion).
+- Fusion mode uses `prepareWithSegments()` + `layoutWithLines()` to lay out real text, then samples video frame brightness at each character position. The text is readable prose whose per-character opacity forms the video image.
+- Frame extraction uses ffmpeg/ffprobe via `execFileSync`. Pixel buffers are read through `@napi-rs/canvas`.
+- Fusion mode requires a built Pretext package (`dist/layout.js`). Run `bun run build:package` before using fusion mode.
+- Keep the CLI stateless (no daemon, no server). Keep HTML output self-contained (single file, inline JS).
+- The text-video-studio browser demo uses `shared/text-video/render-browser.ts` instead of `shared/text-video/render.ts` to avoid Node-only native module imports (`@resvg/resvg-js`, `@napi-rs/canvas`). The studio TS imports from `sample.ts`/`schema.ts` directly, not the `runtime.ts` barrel.
+- See `docs/mp4toascii-plan.md` for the phased roadmap. The highest-value Pretext-native features are silhouette masking via `layoutNextLine()` (Phase 3.1) and proportional width budgeting (Phase 1.2).
 
 ### Open questions
 

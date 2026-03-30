@@ -22,6 +22,15 @@ Current priorities:
 - Prefer `layoutNextLine()` / `walkLineRanges()` when a demo is really about streaming or obstacle-aware layout.
 - Add a new demo only if it exposes something the current editorial demos do not already cover.
 
+4. mp4toascii
+
+- Phase 1 (resolution): sub-character brightness via variable font weight, proportional-font width budgeting, multi-style palettes, ordered dithering, edge-directed character selection.
+- Phase 2 (temporal): per-cell brightness smoothing, character stability scoring, scrolling text fusion, optical flow-guided direction, beat-driven layout pulsing.
+- Phase 3 (spatial): silhouette masking with `layoutNextLine()`, multi-column flow, gravity/density-based text clustering, text-shaped masks.
+- See `docs/mp4toascii-plan.md` for the full phased roadmap.
+- The silhouette masking (3.1) and proportional width budgeting (1.2) are the highest-value Pretext-native features.
+- Keep the CLI stateless and HTML output self-contained.
+
 Not worth doing right now:
 
 - Do not chase universal exactness as the product claim.
