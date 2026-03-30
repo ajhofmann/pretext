@@ -1,5 +1,8 @@
-import { createSampleProject } from '../../shared/text-video/runtime.ts'
-import type { TextVideoProject, Layer } from '../../shared/text-video/runtime.ts'
+import { createSampleProject } from '../../shared/text-video/sample.ts'
+import type { TextVideoProject } from '../../shared/text-video/schema.ts'
+import type { Layer } from '../../shared/text-video/schema.ts'
+import openaiSvg from '../assets/openai-symbol.svg'
+import claudeSvg from '../assets/claude-symbol.svg'
 
 function getRequiredElement<T extends HTMLElement>(id: string, ctor: { new(): T }): T {
   const element = document.getElementById(id)
@@ -21,9 +24,17 @@ const yInput = getRequiredElement('y-input', HTMLInputElement)
 const widthInput = getRequiredElement('width-input', HTMLInputElement)
 const opacityInput = getRequiredElement('opacity-input', HTMLInputElement)
 const resetButton = getRequiredElement('reset-project', HTMLButtonElement)
-const STUDIO_PROJECT_PATH = '/workspace/examples/text-video/projects/sample/project.json'
 
+const assetUrlMap: Record<string, string> = {
+  'openai-mark': openaiSvg,
+  'claude-mark': claudeSvg,
+}
 const baseProject = createSampleProject()
+for (const asset of baseProject.assets) {
+  if (asset.type === 'image' && asset.id in assetUrlMap) {
+    ;(asset as { src: string }).src = assetUrlMap[asset.id]!
+  }
+}
 let project: TextVideoProject = structuredClone(baseProject)
 let currentTime = 0
 let isPlaying = false
@@ -106,8 +117,8 @@ function syncEditorFields(): void {
 }
 
 async function renderPreview(): Promise<void> {
-  const { renderFrameSvg } = await import('../../shared/text-video/render.ts')
-  const svg = await renderFrameSvg(project, currentTime, { absoluteProjectPath: STUDIO_PROJECT_PATH })
+  const { renderFrameSvgBrowser } = await import('../../shared/text-video/render-browser.ts')
+  const svg = await renderFrameSvgBrowser(project, currentTime)
   previewHost.replaceChildren()
   const img = document.createElement('img')
   img.alt = 'text video preview'

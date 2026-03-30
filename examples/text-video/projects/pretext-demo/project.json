@@ -1,0 +1,346 @@
+{
+  "format": "pretext-text-video",
+  "version": 2,
+  "info": {
+    "name": "pretext-demo",
+    "description": "A demo showcasing the Pretext text layout library and its text-video engine.",
+    "author": "Adam Hofmann"
+  },
+  "video": {
+    "width": 1920,
+    "height": 1080,
+    "fps": 30,
+    "durationSeconds": 12,
+    "background": "#07111d"
+  },
+  "assets": [
+    {
+      "id": "font-sans",
+      "type": "font",
+      "family": "DejaVu Sans",
+      "src": "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+    },
+    {
+      "id": "font-sans-bold",
+      "type": "font",
+      "family": "DejaVu Sans Bold",
+      "src": "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+    },
+    {
+      "id": "font-serif",
+      "type": "font",
+      "family": "DejaVu Serif",
+      "src": "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf"
+    },
+    {
+      "id": "font-serif-bold",
+      "type": "font",
+      "family": "DejaVu Serif Bold",
+      "src": "/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf"
+    },
+    {
+      "id": "openai-mark",
+      "type": "image",
+      "src": "../../../../pages/assets/openai-symbol.svg",
+      "embed": true,
+      "mimeType": "image/svg+xml"
+    },
+    {
+      "id": "claude-mark",
+      "type": "image",
+      "src": "../../../../pages/assets/claude-symbol.svg",
+      "embed": true,
+      "mimeType": "image/svg+xml"
+    }
+  ],
+  "scenes": [
+    {
+      "id": "title",
+      "start": 0,
+      "duration": 5,
+      "background": {
+        "keyframes": [
+          { "time": 0, "value": "#07111d" },
+          { "time": 5, "value": "#0a1d2f", "easing": "ease-in-out" }
+        ]
+      },
+      "transitionIn": { "type": "fade", "duration": 0.8, "easing": "ease-in-out" },
+      "layers": [
+        {
+          "id": "backdrop",
+          "type": "shape",
+          "shape": "rect",
+          "x": 60,
+          "y": 60,
+          "width": 1800,
+          "height": 960,
+          "fill": "#0f172a",
+          "radius": 32,
+          "opacity": { "keyframes": [{ "time": 0, "value": 0.2 }, { "time": 1.0, "value": 0.7, "easing": "ease-out" }] }
+        },
+        {
+          "id": "accent-line",
+          "type": "shape",
+          "shape": "rect",
+          "x": 140,
+          "y": 140,
+          "width": 120,
+          "height": 6,
+          "fill": "#38bdf8",
+          "radius": 3,
+          "opacity": { "keyframes": [{ "time": 0, "value": 0 }, { "time": 0.8, "value": 1, "easing": "ease-out" }] }
+        },
+        {
+          "id": "eyebrow",
+          "type": "text",
+          "text": "INTRODUCING",
+          "fontFamily": "DejaVu Sans Bold",
+          "fontWeight": 700,
+          "fontSize": 24,
+          "lineHeight": 32,
+          "width": 600,
+          "x": { "keyframes": [{ "time": 0, "value": 110 }, { "time": 1.0, "value": 140, "easing": "ease-out" }] },
+          "y": 170,
+          "color": "#38bdf8",
+          "letterSpacing": 6,
+          "opacity": { "keyframes": [{ "time": 0, "value": 0 }, { "time": 0.8, "value": 1, "easing": "ease-in" }] }
+        },
+        {
+          "id": "title-text",
+          "type": "text",
+          "text": "Pretext",
+          "fontFamily": "DejaVu Serif Bold",
+          "fontWeight": 700,
+          "fontSize": { "keyframes": [{ "time": 0, "value": 140 }, { "time": 3.5, "value": 160, "easing": "ease-in-out" }] },
+          "lineHeight": 180,
+          "width": 1200,
+          "x": 140,
+          "y": 230,
+          "color": "#f8fafc",
+          "shadow": {
+            "color": "#020617",
+            "blur": 20,
+            "offsetX": 0,
+            "offsetY": 10,
+            "opacity": 0.7
+          }
+        },
+        {
+          "id": "subtitle",
+          "type": "text",
+          "text": "Pure JavaScript multiline text measurement and layout. No DOM in the hot path.",
+          "fontFamily": "DejaVu Sans",
+          "fontSize": 38,
+          "lineHeight": 54,
+          "width": 960,
+          "x": 150,
+          "y": 440,
+          "color": "#cbd5e1",
+          "opacity": { "keyframes": [{ "time": 0.3, "value": 0 }, { "time": 1.5, "value": 1, "easing": "ease-in" }] }
+        },
+        {
+          "id": "logo-group",
+          "type": "group",
+          "x": 1380,
+          "y": 180,
+          "children": [
+            {
+              "id": "openai-logo",
+              "type": "image",
+              "assetId": "openai-mark",
+              "x": 0,
+              "y": 0,
+              "width": 200,
+              "height": 200,
+              "opacity": { "keyframes": [{ "time": 0.5, "value": 0 }, { "time": 1.5, "value": 0.8, "easing": "ease-out" }] },
+              "rotation": { "keyframes": [{ "time": 0, "value": -5 }, { "time": 4, "value": 5, "easing": "ease-in-out" }] },
+              "fit": "contain",
+              "anchorX": "center",
+              "anchorY": "center"
+            },
+            {
+              "id": "claude-logo",
+              "type": "image",
+              "assetId": "claude-mark",
+              "x": 220,
+              "y": 60,
+              "width": 160,
+              "height": 160,
+              "opacity": { "keyframes": [{ "time": 0.8, "value": 0 }, { "time": 1.8, "value": 0.8, "easing": "ease-out" }] },
+              "fit": "contain",
+              "anchorX": "center",
+              "anchorY": "center"
+            }
+          ]
+        },
+        {
+          "id": "features-block",
+          "type": "text",
+          "text": "Canvas-based measurement aligned with browser fonts. prepare() once, layout() at any width. Resize-friendly, zero allocation in the hot path.",
+          "fontFamily": "DejaVu Sans",
+          "fontSize": 28,
+          "lineHeight": 44,
+          "width": 800,
+          "x": 160,
+          "y": 620,
+          "color": "#94a3b8",
+          "opacity": { "keyframes": [{ "time": 0.8, "value": 0 }, { "time": 2.2, "value": 1, "easing": "ease-in" }] },
+          "background": { "keyframes": [{ "time": 0, "value": "#0f172a" }, { "time": 4, "value": "#132238" }] },
+          "padding": { "top": 20, "right": 24, "bottom": 20, "left": 24 },
+          "cornerRadius": 16
+        }
+      ]
+    },
+    {
+      "id": "features",
+      "start": 5,
+      "duration": 4,
+      "background": "#091a2a",
+      "transitionIn": { "type": "slide-left", "duration": 0.7, "easing": "ease-in-out" },
+      "layers": [
+        {
+          "id": "feat-title",
+          "type": "text",
+          "text": "Text layout without the DOM.",
+          "fontFamily": "DejaVu Serif Bold",
+          "fontWeight": 700,
+          "fontSize": 72,
+          "lineHeight": 88,
+          "width": 1100,
+          "x": 120,
+          "y": 100,
+          "color": "#ffffff"
+        },
+        {
+          "id": "feat-body",
+          "type": "text",
+          "text": "Pretext ships rich layout APIs: prepare + layout for the fast path, layoutWithLines for editorial rendering, walkLineRanges for shrinkwrap, and layoutNextLine for variable-width flows.",
+          "fontFamily": "DejaVu Sans",
+          "fontSize": 32,
+          "lineHeight": 48,
+          "width": 1000,
+          "x": 126,
+          "y": 300,
+          "color": "#dbeafe"
+        },
+        {
+          "id": "cards-group",
+          "type": "group",
+          "x": 120,
+          "y": 560,
+          "children": [
+            {
+              "id": "card-1",
+              "type": "shape",
+              "shape": "rect",
+              "x": 0,
+              "y": 0,
+              "width": 520,
+              "height": 220,
+              "fill": "#10233a",
+              "radius": 24
+            },
+            {
+              "id": "card-1-text",
+              "type": "text",
+              "text": "99.9% browser accuracy across Chrome, Safari, and Firefox.",
+              "fontFamily": "DejaVu Sans Bold",
+              "fontWeight": 700,
+              "fontSize": 30,
+              "lineHeight": 44,
+              "width": 440,
+              "x": 36,
+              "y": 36,
+              "color": "#f8fafc"
+            },
+            {
+              "id": "card-2",
+              "type": "shape",
+              "shape": "rect",
+              "x": 560,
+              "y": 0,
+              "width": 520,
+              "height": 220,
+              "fill": "#12324d",
+              "radius": 24
+            },
+            {
+              "id": "card-2-text",
+              "type": "text",
+              "text": "Semantic text-video engine: scenes, layers, keyframes, and portable .ptxv bundles.",
+              "fontFamily": "DejaVu Sans Bold",
+              "fontWeight": 700,
+              "fontSize": 30,
+              "lineHeight": 44,
+              "width": 438,
+              "x": 596,
+              "y": 36,
+              "color": "#f8fafc"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "closing",
+      "start": 9,
+      "duration": 3,
+      "background": "#07111d",
+      "transitionIn": { "type": "fade", "duration": 0.6, "easing": "ease-in-out" },
+      "layers": [
+        {
+          "id": "close-backdrop",
+          "type": "shape",
+          "shape": "rect",
+          "x": 360,
+          "y": 280,
+          "width": 1200,
+          "height": 520,
+          "fill": "#0f172a",
+          "radius": 32,
+          "opacity": 0.8
+        },
+        {
+          "id": "close-title",
+          "type": "text",
+          "text": "@chenglou/pretext",
+          "fontFamily": "DejaVu Serif Bold",
+          "fontWeight": 700,
+          "fontSize": 84,
+          "lineHeight": 100,
+          "width": 1100,
+          "x": 410,
+          "y": 340,
+          "color": "#ffffff",
+          "align": "center"
+        },
+        {
+          "id": "close-body",
+          "type": "text",
+          "text": "npm install @chenglou/pretext",
+          "fontFamily": "DejaVu Sans",
+          "fontSize": 36,
+          "lineHeight": 48,
+          "width": 1000,
+          "x": 460,
+          "y": 480,
+          "color": "#38bdf8",
+          "align": "center"
+        },
+        {
+          "id": "close-footer",
+          "type": "text",
+          "text": "Pure JavaScript. Zero DOM. Browser-accurate text layout.",
+          "fontFamily": "DejaVu Sans",
+          "fontSize": 28,
+          "lineHeight": 40,
+          "width": 900,
+          "x": 510,
+          "y": 580,
+          "color": "#64748b",
+          "align": "center"
+        }
+      ]
+    }
+  ]
+}

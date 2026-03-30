@@ -164,58 +164,65 @@
       <section class="panel">
         <h2>Playback</h2>
         <div class="controls">
-          <button id="playPauseButton">Play</button>
-          <button id="resetButton" class="secondary">Reset</button>
-          <span id="timeLabel" class="meta">0.00s / 0.00s</span>
+          <button id="play-pause">Play</button>
+          <button id="reset-project" class="secondary">Reset</button>
+          <span id="time-label" class="meta">0.00s / 0.00s</span>
         </div>
         <div class="field">
-          <label for="timelineRange">Timeline</label>
-          <input id="timelineRange" type="range" min="0" max="1" step="0.001" value="0">
+          <label for="scrubber">Timeline</label>
+          <input id="scrubber" type="range" min="0" max="1" step="0.001" value="0">
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Scenes</h2>
+        <div class="field">
+          <label for="scene-select">Scene</label>
+          <select id="scene-select"></select>
         </div>
       </section>
 
       <section class="panel">
         <h2>Layers</h2>
-        <div id="layerList" class="list"></div>
+        <div class="field">
+          <label for="layer-select">Layer</label>
+          <select id="layer-select"></select>
+        </div>
+        <pre id="layer-meta" class="meta" style="white-space:pre-wrap;max-height:160px;overflow:auto;font-size:11px;margin:8px 0 0"></pre>
       </section>
 
       <section class="panel">
-        <h2>Selected layer</h2>
+        <h2>Edit layer</h2>
         <div class="field">
-          <label for="layerType">Type</label>
-          <input id="layerType" readonly>
+          <label for="text-input">Text content</label>
+          <textarea id="text-input"></textarea>
         </div>
         <div class="field">
-          <label for="layerText">Text content</label>
-          <textarea id="layerText"></textarea>
+          <label for="color-input">Color / fill</label>
+          <input id="color-input" type="text" placeholder="#ffffff">
         </div>
         <div class="field">
-          <label for="layerColor">Color / fill</label>
-          <input id="layerColor" type="text" placeholder="#ffffff">
+          <label for="x-input">X position</label>
+          <input id="x-input" type="number" step="1">
         </div>
         <div class="field">
-          <label for="layerX">X position</label>
-          <input id="layerX" type="number" step="1">
+          <label for="y-input">Y position</label>
+          <input id="y-input" type="number" step="1">
         </div>
         <div class="field">
-          <label for="layerY">Y position</label>
-          <input id="layerY" type="number" step="1">
+          <label for="width-input">Width / size</label>
+          <input id="width-input" type="number" step="1">
         </div>
         <div class="field">
-          <label for="layerWidth">Width / size</label>
-          <input id="layerWidth" type="number" step="1">
+          <label for="opacity-input">Opacity</label>
+          <input id="opacity-input" type="number" step="0.05" min="0" max="1">
         </div>
-        <div class="field">
-          <label for="layerOpacity">Opacity</label>
-          <input id="layerOpacity" type="number" step="0.05" min="0" max="1">
-        </div>
-        <button id="applyButton" class="secondary">Apply edits</button>
       </section>
     </aside>
 
     <main class="preview-wrap">
       <section class="preview-panel">
-        <div id="previewStage" class="preview-stage"></div>
+        <div id="preview" class="preview-stage"></div>
       </section>
     </main>
   </div>
