@@ -12,6 +12,14 @@ import {
   writeFusionHtmlPage,
   renderAsciiToMp4,
 } from '../shared/mp4toascii/render.ts'
+import {
+  encodeAsciiFrames,
+  encodeFusionFrames,
+  writeAscvFile,
+  readAscvFile,
+  ascvFrameToAnsi,
+  ascvToHtml,
+} from '../shared/mp4toascii/ascv.ts'
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -32,21 +40,57 @@ function parseArgs(argv: string[]) {
 
 const args = parseArgs(process.argv.slice(2))
 const inputPath = args['input']
+const playPath = args['play']
+
+if (playPath) {
+  const absolutePlay = resolve(playPath)
+  console.log(`Loading: ${absolutePlay}`)
+  const ascv = readAscvFile(absolutePlay)
+  console.log(`${ascv.header.cols}x${ascv.header.rows} @ ${ascv.header.fps}fps, ${ascv.header.frameCount} frames, mode=${ascv.header.mode}`)
+
+  const output = args['output'] ?? '-'
+  if (output === '-') {
+    for (let i = 0; i < ascv.frames.length; i++) {
+      process.stdout.write('\x1b[H\x1b[2J')
+      process.stdout.write(ascvFrameToAnsi(ascv.frames[i]!, ascv.header.color))
+      if (i < ascv.frames.length - 1) {
+        await new Promise(r => setTimeout(r, 1000 / ascv.header.fps))
+      }
+    }
+    process.stdout.write('\n')
+  } else if (output.endsWith('.html')) {
+    ascvToHtml(ascv, resolve(output))
+    console.log(`Wrote HTML: ${output}`)
+  } else {
+    const lines = ascv.frames.map(f => ascvFrameToAnsi(f, ascv.header.color))
+    const { writeFileSync } = await import('node:fs')
+    writeFileSync(resolve(output), lines.join('\n\n---\n\n'), 'utf-8')
+    console.log(`Wrote text: ${output}`)
+  }
+  console.log('Done.')
+  process.exit(0)
+}
+
 if (!inputPath) {
   console.error(`Usage: mp4toascii --input=<video> [options]
+       mp4toascii --play=<file.ascv> [--output=<path>]
 
-Options:
+Encode a video:
   --input=<path>       Source video file (required)
   --cols=<n>           Character columns (default: 120)
   --rows=<n>           Character rows (auto from aspect ratio if omitted)
   --fps=<n>            Output frame rate (default: source fps, capped at 15)
   --mode=<mode>        mono | fusion (default: fusion)
-  --output=<path>      Output file (.html, .mp4, .txt, or - for terminal)
+  --output=<path>      Output: .ascv (shareable), .html, .mp4, .txt, or - for terminal
   --text=<path>        Text file for fusion mode (default: built-in sample)
   --font=<font>        Font for fusion mode (default: 14px Georgia)
   --color              Enable color output
   --invert             Invert brightness
   --max-frames=<n>     Limit number of frames processed
+
+Play back a .ascv file:
+  --play=<file.ascv>   Play a previously encoded .ascv file
+  --output=<path>      Convert .ascv to .html or .txt (default: terminal playback)
 `)
   process.exit(1)
 }
@@ -89,7 +133,11 @@ if (mode === 'mono') {
   const asciiFrames = frames.map(f => mapFrameMono(f, invert, color))
   const ansiStrings = asciiFrames.map(f => asciiFrameToAnsi(f))
 
-  if (output === '-') {
+  if (output.endsWith('.ascv')) {
+    const ascv = encodeAsciiFrames(asciiFrames, targetFps, color)
+    writeAscvFile(ascv, resolve(output))
+    console.log(`Wrote ASCV: ${output} (${ascv.header.frameCount} frames)`)
+  } else if (output === '-') {
     for (let i = 0; i < ansiStrings.length; i++) {
       process.stdout.write('\x1b[H\x1b[2J')
       process.stdout.write(ansiStrings[i]!)
@@ -165,7 +213,11 @@ if (mode === 'mono') {
   })
   process.stdout.write('\n')
 
-  if (output === '-') {
+  if (output.endsWith('.ascv')) {
+    const ascv = encodeFusionFrames(fusionFrames, cols, rows, targetFps, color)
+    writeAscvFile(ascv, resolve(output))
+    console.log(`Wrote ASCV: ${output} (${ascv.header.frameCount} frames)`)
+  } else if (output === '-') {
     for (let i = 0; i < fusionFrames.length; i++) {
       process.stdout.write('\x1b[H\x1b[2J')
       process.stdout.write(fusionFrameToAnsi(fusionFrames[i]!, color))
