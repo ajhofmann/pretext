@@ -9,5 +9,5 @@
     "declaration": true
   },
   "include": ["src/**/*.ts"],
-  "exclude": ["src/layout.test.ts", "src/test-data.ts"]
+  "exclude": ["src/layout.test.ts", "src/video.test.ts", "src/test-data.ts"]
 }

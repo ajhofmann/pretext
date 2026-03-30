@@ -53,8 +53,10 @@ async function smokeJavaScriptEsm(tarballPath: string): Promise<void> {
     path.join(projectDir, 'index.js'),
     [
       "import * as pretext from '@chenglou/pretext'",
+      "import { TextVideoEngine } from '@chenglou/pretext/video'",
       "if (typeof pretext.prepare !== 'function') throw new Error('prepare export missing')",
       "if (typeof pretext.layout !== 'function') throw new Error('layout export missing')",
+      "if (typeof TextVideoEngine !== 'function') throw new Error('video export missing')",
       "console.log('js-esm ok')",
       '',
     ].join('\n'),
@@ -95,9 +97,13 @@ async function smokeTypeScript(tarballPath: string): Promise<void> {
     path.join(projectDir, 'index.ts'),
     [
       "import { layout, prepare } from '@chenglou/pretext'",
+      "import { composeTextVideoFrame, type TextVideoProject } from '@chenglou/pretext/video'",
       "const prepared = prepare('hello', '16px Inter')",
       'const result = layout(prepared, 100, 20)',
       'result.height satisfies number',
+      "const project: TextVideoProject = { width: 320, height: 180, duration: 1, fps: 30, clips: [] }",
+      'const frame = composeTextVideoFrame(project, 0)',
+      'frame.lines satisfies Array<unknown>',
       '',
     ].join('\n'),
   )

@@ -90,6 +90,71 @@ while (true) {
 
 This usage allows rendering to canvas, SVG, WebGL and (eventually) server-side.
 
+### 3. Compose high-resolution text video frames
+
+Pretext now also ships a video-oriented canvas composition helper under a separate subpath:
+
+```ts
+import { TextVideoEngine } from '@chenglou/pretext/video'
+
+const engine = new TextVideoEngine({
+  width: 3840,
+  height: 2160,
+  duration: 6,
+  fps: 60,
+  background: {
+    kind: 'linear-gradient',
+    x0: 0, y0: 0, x1: 3840, y1: 2160,
+    stops: [
+      { offset: 0, color: '#0b1020' },
+      { offset: 1, color: '#1f2937' },
+    ],
+  },
+  obstacles: [
+    {
+      id: 'orb',
+      kind: 'circle',
+      x: { keyframes: [{ time: 0, value: 900 }, { time: 6, value: 2900, easing: 'ease-in-out' }] },
+      y: 820,
+      radius: 260,
+      padding: 32,
+      fill: 'rgba(118, 92, 255, 0.28)',
+    },
+  ],
+  clips: [
+    {
+      id: 'title',
+      text: 'PRETEXT CAN DRIVE TEXT VIDEO',
+      font: '700 144px Inter',
+      lineHeight: 154,
+      fill: '#f8fafc',
+      regions: [{ x: 260, y: 240, width: 3320, height: 420 }],
+      reveal: { duration: 0.9, stagger: 0.08, fromY: 40 },
+    },
+    {
+      id: 'body',
+      text: 'Prepare once, then reflow and render lines at 4K, 8K, or poster-sized canvases while routing around animated obstacles.',
+      font: '400 64px Inter',
+      lineHeight: 84,
+      fill: '#d7deee',
+      regions: [{ x: 280, y: 860, width: 3280, height: 920 }],
+      wrap: { obstacleIds: ['orb'], minSlotWidth: 120, slotOrder: 'widest-first' },
+      lineBox: { fill: 'rgba(255,255,255,0.05)', paddingX: 28, paddingY: 10, radius: 20 },
+    },
+  ],
+})
+
+const canvas = document.querySelector('canvas')!
+engine.attachCanvas(canvas)
+engine.renderFrame(1.5) // draw the scene at t=1.5s
+```
+
+The video module keeps line planning in Pretext and leaves the final drawing to canvas, which makes it suitable for:
+- tunable typography and line-height-heavy motion design
+- obstacle-aware editorial animation
+- arbitrarily high-resolution render targets (`4K`, `8K`, social crops, print-sized stills)
+- browser recording pipelines via `recordTextVideo()`
+
 ### API Glossary
 
 Use-case 1 APIs:
@@ -125,6 +190,17 @@ Other helpers:
 ```ts
 clearCache(): void // clears Pretext's shared internal caches used by prepare() and prepareWithSegments(). Useful if your app cycles through many different fonts or text variants and you want to release the accumulated cache
 setLocale(locale?: string): void // optional (by default we use the current locale). Sets locale for future prepare() and prepareWithSegments(). Internally, it also calls clearCache(). Setting a new locale doesn't affect existing prepare() and prepareWithSegments() states (no mutations to them)
+```
+
+Video helper subpath:
+```ts
+import {
+  TextVideoEngine,
+  composeTextVideoFrame,
+  renderTextVideoFrame,
+  recordTextVideo,
+  type TextVideoProject,
+} from '@chenglou/pretext/video'
 ```
 
 ## Caveats

@@ -1,0 +1,618 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta
+    name="description"
+    content="A high-resolution text video rendering engine demo built with Pretext."
+  >
+  <title>Text Video Engine</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; }
+    :root {
+      color-scheme: dark;
+      --bg: #090a0f;
+      --panel: rgba(15, 18, 28, 0.84);
+      --panel-border: rgba(255, 255, 255, 0.08);
+      --ink: #f2efe7;
+      --muted: #a8a2b8;
+      --accent: #d7b271;
+      --accent-strong: #f0cb88;
+      --button: rgba(255, 255, 255, 0.08);
+      --button-hover: rgba(255, 255, 255, 0.14);
+      --danger: #eb8072;
+    }
+    html, body {
+      min-height: 100%;
+      background:
+        radial-gradient(circle at top, rgba(96, 74, 151, 0.28), transparent 42%),
+        linear-gradient(180deg, #10131d 0%, var(--bg) 72%);
+      color: var(--ink);
+      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    }
+    body {
+      min-height: 100vh;
+    }
+    .page {
+      width: min(1400px, calc(100vw - 28px));
+      margin: 0 auto;
+      padding: 22px 0 40px;
+    }
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.05fr) minmax(360px, 0.95fr);
+      gap: 18px;
+      align-items: start;
+    }
+    .hero-copy {
+      padding: 22px 24px;
+      border: 1px solid var(--panel-border);
+      border-radius: 24px;
+      background: linear-gradient(180deg, rgba(28, 32, 48, 0.82), rgba(11, 13, 21, 0.88));
+      box-shadow: 0 28px 60px rgba(0, 0, 0, 0.26);
+    }
+    .eyebrow {
+      margin-bottom: 10px;
+      font: 600 11px/1.2 "SF Mono", ui-monospace, Menlo, monospace;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+    h1 {
+      font: 700 clamp(34px, 5vw, 58px)/0.94 Georgia, "Times New Roman", serif;
+      letter-spacing: -0.04em;
+      max-width: 10ch;
+    }
+    .lede {
+      margin-top: 14px;
+      max-width: 62ch;
+      font: 400 15px/1.6 "Helvetica Neue", Helvetica, Arial, sans-serif;
+      color: var(--muted);
+    }
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 22px;
+    }
+    .stat {
+      padding: 14px 14px 15px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.03);
+    }
+    .stat__label {
+      font: 600 11px/1.2 "SF Mono", ui-monospace, Menlo, monospace;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .stat__value {
+      margin-top: 7px;
+      font: 700 24px/1.05 Georgia, "Times New Roman", serif;
+      color: var(--ink);
+    }
+    .stat__hint {
+      margin-top: 7px;
+      font: 400 13px/1.45 "Helvetica Neue", Helvetica, Arial, sans-serif;
+      color: var(--muted);
+    }
+    .shell {
+      display: grid;
+      grid-template-columns: minmax(340px, 420px) minmax(0, 1fr);
+      gap: 18px;
+      margin-top: 18px;
+      align-items: start;
+    }
+    .panel {
+      border: 1px solid var(--panel-border);
+      border-radius: 24px;
+      background: var(--panel);
+      box-shadow: 0 28px 60px rgba(0, 0, 0, 0.26);
+      backdrop-filter: blur(18px);
+    }
+    .controls {
+      padding: 18px;
+      position: sticky;
+      top: 14px;
+    }
+    .controls-header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .controls-title {
+      font: 700 22px/1.08 Georgia, "Times New Roman", serif;
+    }
+    .controls-subtitle {
+      font: 500 12px/1.3 "SF Mono", ui-monospace, Menlo, monospace;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .section {
+      padding-top: 14px;
+      margin-top: 14px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .section:first-of-type {
+      border-top: none;
+      margin-top: 0;
+      padding-top: 0;
+    }
+    .section h2 {
+      font: 600 13px/1.2 "SF Mono", ui-monospace, Menlo, monospace;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 10px;
+    }
+    .control-grid {
+      display: grid;
+      gap: 12px;
+    }
+    .control {
+      display: grid;
+      gap: 7px;
+    }
+    .control-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+    }
+    .control label,
+    .control span.label {
+      font: 500 13px/1.25 "Helvetica Neue", Helvetica, Arial, sans-serif;
+      color: var(--ink);
+    }
+    .value {
+      font: 600 12px/1.25 "SF Mono", ui-monospace, Menlo, monospace;
+      color: var(--muted);
+    }
+    .hint {
+      font: 400 12px/1.45 "Helvetica Neue", Helvetica, Arial, sans-serif;
+      color: var(--muted);
+    }
+    .segmented {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .segmented input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .segmented label {
+      padding: 8px 11px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.04);
+      font: 600 12px/1 "Helvetica Neue", Helvetica, Arial, sans-serif;
+      color: var(--muted);
+      cursor: pointer;
+      transition: background 140ms ease, color 140ms ease, border-color 140ms ease;
+    }
+    .segmented input:checked + label {
+      color: #0c0e14;
+      background: var(--accent-strong);
+      border-color: rgba(240, 203, 136, 0.9);
+    }
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+    }
+    textarea,
+    select {
+      width: 100%;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--ink);
+      padding: 12px 13px;
+      font: 400 13px/1.45 "Helvetica Neue", Helvetica, Arial, sans-serif;
+    }
+    textarea {
+      min-height: 150px;
+      resize: vertical;
+    }
+    .action-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
+    }
+    button {
+      appearance: none;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 999px;
+      background: var(--button);
+      color: var(--ink);
+      padding: 10px 14px;
+      font: 600 13px/1 "Helvetica Neue", Helvetica, Arial, sans-serif;
+      cursor: pointer;
+      transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
+    }
+    button:hover {
+      transform: translateY(-1px);
+      background: var(--button-hover);
+      border-color: rgba(255, 255, 255, 0.16);
+    }
+    button:disabled {
+      cursor: wait;
+      opacity: 0.64;
+      transform: none;
+    }
+    .button--primary {
+      background: linear-gradient(180deg, rgba(239, 200, 126, 0.95), rgba(206, 164, 87, 0.95));
+      color: #11131a;
+      border-color: rgba(239, 200, 126, 0.88);
+    }
+    .button--danger {
+      color: var(--danger);
+    }
+    .viewport {
+      padding: 18px;
+    }
+    .stage-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .stage-title {
+      font: 700 22px/1.08 Georgia, "Times New Roman", serif;
+    }
+    .stage-meta {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 10px;
+      color: var(--muted);
+      font: 600 11px/1.25 "SF Mono", ui-monospace, Menlo, monospace;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .canvas-shell {
+      position: relative;
+      border-radius: 28px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02)),
+        rgba(4, 5, 9, 0.88);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      background: #05060b;
+    }
+    .timeline {
+      margin-top: 14px;
+      display: grid;
+      gap: 8px;
+    }
+    .progress {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+      color: var(--muted);
+      font: 500 12px/1.4 "Helvetica Neue", Helvetica, Arial, sans-serif;
+    }
+    .footer-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .footer-card {
+      padding: 14px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .footer-card h3 {
+      font: 600 12px/1.2 "SF Mono", ui-monospace, Menlo, monospace;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+    .footer-card p {
+      margin-top: 8px;
+      font: 400 13px/1.55 "Helvetica Neue", Helvetica, Arial, sans-serif;
+      color: var(--muted);
+    }
+    @media (max-width: 1120px) {
+      .hero {
+        grid-template-columns: 1fr;
+      }
+      .shell {
+        grid-template-columns: 1fr;
+      }
+      .controls {
+        position: static;
+      }
+    }
+    @media (max-width: 720px) {
+      .page {
+        width: min(100vw - 16px, 1400px);
+        padding-top: 14px;
+      }
+      .hero-copy,
+      .controls,
+      .viewport {
+        padding-inline: 14px;
+      }
+      .stat-grid,
+      .footer-grid {
+        grid-template-columns: 1fr;
+      }
+      .stage-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .stage-meta {
+        justify-content: flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">Demo / Public API</p>
+        <h1>High-resolution text video, driven by Pretext.</h1>
+        <p class="lede">
+          This demo uses a reusable <code>@chenglou/pretext/video</code> engine to
+          plan obstacle-aware text layout and render the result to canvas at arbitrary
+          output resolutions. Tune typography, pacing, line boxes, glow obstacles,
+          multi-column flow, and export stills or recorded clips.
+        </p>
+        <div class="stat-grid">
+          <div class="stat">
+            <div class="stat__label">Layout model</div>
+            <div class="stat__value">Precomputed</div>
+            <div class="stat__hint">Text is prepared once, then frame layout is arithmetic over cached widths.</div>
+          </div>
+          <div class="stat">
+            <div class="stat__label">Output strategy</div>
+            <div class="stat__value">Oversampled</div>
+            <div class="stat__hint">Preview can stay lightweight while export uses the configured production resolution.</div>
+          </div>
+          <div class="stat">
+            <div class="stat__label">Composition</div>
+            <div class="stat__value">Manual</div>
+            <div class="stat__hint">Regions, obstacles, reveal timing, and paint effects are all userland and fully tunable.</div>
+          </div>
+        </div>
+      </div>
+      <div class="panel viewport">
+        <div class="stage-header">
+          <div>
+            <div class="eyebrow">Preview</div>
+            <div class="stage-title">Live frame compositor</div>
+          </div>
+          <div class="stage-meta">
+            <span id="meta-resolution">1920x1080</span>
+            <span id="meta-fps">30 fps</span>
+            <span id="meta-duration">8.0 s</span>
+            <span id="meta-lines">0 lines</span>
+          </div>
+        </div>
+        <div class="canvas-shell">
+          <canvas id="preview-canvas" width="1600" height="900"></canvas>
+        </div>
+        <div class="timeline">
+          <div class="progress">
+            <span id="playback-state">Paused</span>
+            <span id="frame-metrics">0.0ms render</span>
+          </div>
+          <input id="timeline" type="range" min="0" max="8" value="0" step="0.001">
+        </div>
+        <div class="action-row">
+          <button id="play-toggle" class="button--primary">Play</button>
+          <button id="step-button">Step +1 frame</button>
+          <button id="snapshot-button">Download PNG</button>
+          <button id="record-button">Record WebM</button>
+          <button id="debug-button">Toggle debug slots</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="shell">
+      <aside class="panel controls">
+        <div class="controls-header">
+          <div>
+            <div class="controls-subtitle">Engine controls</div>
+            <div class="controls-title">Scene tuning</div>
+          </div>
+          <div class="value" id="config-summary">1080p / 30fps</div>
+        </div>
+
+        <div class="section">
+          <h2>Output</h2>
+          <div class="control-grid">
+            <div class="control">
+              <div class="control-row">
+                <label for="preset-select">Resolution preset</label>
+              </div>
+              <select id="preset-select">
+                <option value="1280x720">720p / 1280x720</option>
+                <option value="1920x1080" selected>1080p / 1920x1080</option>
+                <option value="2560x1440">1440p / 2560x1440</option>
+                <option value="3840x2160">4K / 3840x2160</option>
+                <option value="7680x4320">8K / 7680x4320</option>
+              </select>
+            </div>
+            <div class="control">
+              <div class="control-row">
+                <label for="preview-scale">Preview scale</label>
+                <span class="value" id="preview-scale-value">35%</span>
+              </div>
+              <input id="preview-scale" type="range" min="20" max="100" value="35" step="1">
+            </div>
+            <div class="control">
+              <div class="control-row">
+                <label for="duration-slider">Duration</label>
+                <span class="value" id="duration-value">8.0s</span>
+              </div>
+              <input id="duration-slider" type="range" min="3" max="16" value="8" step="0.5">
+            </div>
+            <div class="control">
+              <div class="control-row">
+                <label for="fps-slider">Frame rate</label>
+                <span class="value" id="fps-value">30 fps</span>
+              </div>
+              <input id="fps-slider" type="range" min="12" max="60" value="30" step="1">
+            </div>
+            <p class="hint">
+              Preview size is independent from export resolution. The engine still composes
+              frame geometry at the chosen production dimensions.
+            </p>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2>Typography</h2>
+          <div class="control-grid">
+            <div class="control">
+              <div class="control-row">
+                <label for="font-size-slider">Body font size</label>
+                <span class="value" id="font-size-value">42px</span>
+              </div>
+              <input id="font-size-slider" type="range" min="22" max="88" value="42" step="1">
+            </div>
+            <div class="control">
+              <div class="control-row">
+                <label for="line-height-slider">Line height</label>
+                <span class="value" id="line-height-value">1.22x</span>
+              </div>
+              <input id="line-height-slider" type="range" min="1.05" max="1.65" value="1.22" step="0.01">
+            </div>
+            <div class="control">
+              <div class="control-row">
+                <label for="padding-slider">Frame padding</label>
+                <span class="value" id="padding-value">120px</span>
+              </div>
+              <input id="padding-slider" type="range" min="36" max="260" value="120" step="2">
+            </div>
+            <div class="control">
+              <div class="control-row">
+                <label for="box-opacity-slider">Line box opacity</label>
+                <span class="value" id="box-opacity-value">0.20</span>
+              </div>
+              <input id="box-opacity-slider" type="range" min="0" max="0.55" value="0.2" step="0.01">
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2>Motion + wrap</h2>
+          <div class="control-grid">
+            <div class="control">
+              <div class="control-row">
+                <label for="reveal-slider">Reveal stagger</label>
+                <span class="value" id="reveal-value">0.05s</span>
+              </div>
+              <input id="reveal-slider" type="range" min="0" max="0.24" value="0.05" step="0.005">
+            </div>
+            <div class="control">
+              <div class="control-row">
+                <label for="obstacle-slider">Obstacle scale</label>
+                <span class="value" id="obstacle-value">1.00x</span>
+              </div>
+              <input id="obstacle-slider" type="range" min="0.5" max="1.65" value="1" step="0.01">
+            </div>
+            <div class="control">
+              <div class="control-row">
+                <label for="wrap-padding-slider">Wrap padding</label>
+                <span class="value" id="wrap-padding-value">26px</span>
+              </div>
+              <input id="wrap-padding-slider" type="range" min="0" max="72" value="26" step="1">
+            </div>
+            <div class="control">
+              <span class="label">Column mode</span>
+              <div class="segmented">
+                <input id="mode-single" type="radio" name="column-mode" value="single">
+                <label for="mode-single">Single</label>
+                <input id="mode-dual" type="radio" name="column-mode" value="dual" checked>
+                <label for="mode-dual">Dual</label>
+                <input id="mode-triple" type="radio" name="column-mode" value="triple">
+                <label for="mode-triple">Triple</label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2>Content</h2>
+          <div class="control-grid">
+            <div class="control">
+              <div class="control-row">
+                <label for="scene-select">Scene preset</label>
+              </div>
+              <select id="scene-select">
+                <option value="launch" selected>Launch trailer</option>
+                <option value="editorial">Editorial typography</option>
+                <option value="kinetic">Kinetic slogan</option>
+              </select>
+            </div>
+            <div class="control">
+              <div class="control-row">
+                <label for="text-input">Narration text</label>
+              </div>
+              <textarea id="text-input"></textarea>
+            </div>
+            <p class="hint">
+              Replace the text and keep the rest of the composition. Pretext re-prepares the
+              paragraph once per font/config, then every frame stays arithmetic-driven.
+            </p>
+          </div>
+        </div>
+      </aside>
+
+      <section class="panel viewport">
+        <div class="stage-header">
+          <div>
+            <div class="eyebrow">Capability notes</div>
+            <div class="stage-title">Why this is a video engine</div>
+          </div>
+        </div>
+        <div class="footer-grid">
+          <article class="footer-card">
+            <h3>Render at production scale</h3>
+            <p>
+              Export frames at 4K or 8K without changing the composition logic. Regions,
+              obstacle paths, and line placement all scale from one declarative project.
+            </p>
+          </article>
+          <article class="footer-card">
+            <h3>Manual composition</h3>
+            <p>
+              Obstacle routing, reveal timing, and multi-region handoff are authored in userland
+              with Pretext’s prepared text and cursor-based line stepping at the core.
+            </p>
+          </article>
+          <article class="footer-card">
+            <h3>Canvas-only paint</h3>
+            <p>
+              The engine plans frame geometry, then paints boxes, shadows, fills, and text
+              directly to canvas. No DOM measurement loop is involved in the render path.
+            </p>
+          </article>
+        </div>
+      </section>
+    </section>
+  </main>
+  <script type="module" src="./text-video-engine.ts"></script>
+</body>
+</html>
