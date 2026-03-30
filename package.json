@@ -28,6 +28,7 @@
     "dist",
     "src",
     "!src/layout.test.ts",
+    "!src/video.test.ts",
     "!src/test-data.ts",
     "pages/demos",
     "pages/assets",
@@ -72,5 +73,8 @@
     "oxlint-tsgolint": "^0.15.0",
     "tsgolint": "^0.0.1",
     "typescript": "6.0.2"
+  },
+  "dependencies": {
+    "@chenglou/pretext": "file:../tmp/tmp.HbYFjnLJMk/pack/chenglou-pretext-0.0.3.tgz"
   }
 }
