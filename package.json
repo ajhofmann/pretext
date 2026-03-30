@@ -64,7 +64,8 @@
     "text-video:encode": "node --experimental-transform-types scripts/text-video-encode.ts",
     "text-video:init": "node --experimental-transform-types scripts/text-video-init.ts",
     "text-video:render": "node --experimental-transform-types scripts/text-video-render.ts",
-    "test:text-video": "node --import tsx --test shared/text-video/engine.test.ts"
+    "test:text-video": "node --import tsx --test shared/text-video/engine.test.ts",
+    "mp4toascii": "node --experimental-transform-types scripts/mp4toascii.ts"
   },
   "devDependencies": {
     "@napi-rs/canvas": "^0.1.97",
