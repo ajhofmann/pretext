@@ -1,0 +1,143 @@
+{
+  "format": "pretext-text-video",
+  "version": 1,
+  "info": {
+    "name": "sample-text-video",
+    "description": "A vector-first text video sample driven by Pretext line layout.",
+    "author": "Adam Hofmann"
+  },
+  "video": {
+    "width": 1920,
+    "height": 1080,
+    "fps": 30,
+    "durationSeconds": 6,
+    "background": "#081120"
+  },
+  "fonts": [
+    {
+      "family": "DejaVu Sans",
+      "src": "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+    },
+    {
+      "family": "DejaVu Serif",
+      "src": "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf"
+    }
+  ],
+  "scenes": [
+    {
+      "id": "intro",
+      "start": 0,
+      "duration": 6,
+      "background": "#081120",
+      "layers": [
+        {
+          "type": "text",
+          "id": "eyebrow",
+          "start": 0,
+          "duration": 6,
+          "text": "PRETEXT POWERED TEXT VIDEO",
+          "fontFamily": "DejaVu Sans",
+          "fontSize": 34,
+          "lineHeight": 42,
+          "fontWeight": 700,
+          "width": 820,
+          "x": {
+            "from": 120,
+            "to": 160,
+            "easing": "ease-out"
+          },
+          "y": 112,
+          "color": "#7dd3fc",
+          "opacity": {
+            "from": 0.15,
+            "to": 1,
+            "easing": "ease-in"
+          },
+          "letterSpacing": 4
+        },
+        {
+          "type": "text",
+          "id": "headline",
+          "start": 0.2,
+          "duration": 5.8,
+          "text": "Render semantic text at poster-scale resolution without turning it into pixels first.",
+          "fontFamily": "DejaVu Serif",
+          "fontSize": {
+            "from": 78,
+            "to": 94,
+            "easing": "ease-in-out"
+          },
+          "lineHeight": {
+            "from": 92,
+            "to": 106,
+            "easing": "ease-in-out"
+          },
+          "fontWeight": 700,
+          "width": {
+            "from": 1100,
+            "to": 1260,
+            "easing": "ease-out"
+          },
+          "x": 120,
+          "y": 220,
+          "color": "#f8fafc",
+          "shadow": {
+            "color": "#020617",
+            "blur": 16,
+            "offsetX": 0,
+            "offsetY": 8,
+            "opacity": 0.65
+          }
+        },
+        {
+          "type": "text",
+          "id": "body",
+          "start": 0.8,
+          "duration": 5.2,
+          "text": "Pretext prepares the text once, then frame rendering becomes line placement over cached widths. That makes high-resolution text video practical: animate copy, typography, composition, and timing while keeping storage semantic and compression friendly.",
+          "fontFamily": "DejaVu Sans",
+          "fontSize": 34,
+          "lineHeight": 50,
+          "width": 980,
+          "x": 124,
+          "y": {
+            "from": 680,
+            "to": 620,
+            "easing": "ease-out"
+          },
+          "color": "#cbd5e1",
+          "opacity": {
+            "from": 0,
+            "to": 1,
+            "easing": "ease-in"
+          },
+          "background": "rgba(15, 23, 42, 0.55)"
+        },
+        {
+          "type": "text",
+          "id": "tagline",
+          "start": 2.2,
+          "duration": 3.8,
+          "text": "Encode the timeline, not the raster.",
+          "fontFamily": "DejaVu Sans",
+          "fontSize": {
+            "from": 30,
+            "to": 42,
+            "easing": "ease-in-out"
+          },
+          "lineHeight": 48,
+          "fontWeight": 700,
+          "width": 760,
+          "x": 124,
+          "y": 960,
+          "color": "#f59e0b",
+          "opacity": {
+            "from": 0,
+            "to": 1,
+            "easing": "ease-out"
+          }
+        }
+      ]
+    }
+  ]
+}
