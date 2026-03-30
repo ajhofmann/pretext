@@ -9,11 +9,11 @@ bun run site:build           # static demo site -> site/
 bun run check                # typecheck + lint
 bun run build:package        # emit dist/ for the published ESM package
 bun run package-smoke-test   # pack the tarball and verify temp JS + TS consumers
-bun test                     # small invariant suite
-bun run text-video:init      # scaffold a sample semantic text-video project
-bun run text-video:encode    # pack project.json into a compressed .ptxv bundle
+bun test                     # invariant suite, including text-video engine tests
+bun run text-video:init      # scaffold a rich semantic text-video project
+bun run text-video:encode    # pack project.json and local assets into a .ptxv bundle
 bun run text-video:decode    # unpack a .ptxv bundle back to JSON
-bun run text-video:render    # render SVG/PNG frames or MP4 from a text-video project
+bun run text-video:render    # render SVG/PNG frames or MP4 from a text-video project or bundle
 bun run accuracy-check       # Chrome browser sweep
 bun run accuracy-check:safari
 bun run accuracy-check:firefox
@@ -49,9 +49,12 @@ Useful pages:
 
 Text-video bootstrap notes:
 - See `docs/text-video-engine-plan.md` for the architecture and phased plan.
-- The semantic project format lives in `examples/text-video/projects/sample/project.json`.
+- The rich sample project lives in `examples/text-video/projects/generated-sample/project.json`; `text-video:init` now scaffolds the same schema.
+- `.ptxv` bundles are versioned and can embed local image/font assets alongside the project JSON.
 - Rendering scripts use Node + `@napi-rs/canvas` to provide `OffscreenCanvas` for Pretext measurement.
 - PNG rasterization uses `@resvg/resvg-js`; MP4 assembly shells out to `ffmpeg`.
+- The browser preview demo is available at `/demos/text-video-studio`.
+- In environments where Bun is unavailable on PATH but Node/npm are, `npx --yes bun ...` is a practical fallback for `package-smoke-test` and demo-site builds.
 
 ## Current Sources Of Truth
 

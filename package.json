@@ -63,7 +63,8 @@
     "text-video:decode": "node --experimental-transform-types scripts/text-video-decode.ts",
     "text-video:encode": "node --experimental-transform-types scripts/text-video-encode.ts",
     "text-video:init": "node --experimental-transform-types scripts/text-video-init.ts",
-    "text-video:render": "node --experimental-transform-types scripts/text-video-render.ts"
+    "text-video:render": "node --experimental-transform-types scripts/text-video-render.ts",
+    "test:text-video": "node --import tsx --test shared/text-video/engine.test.ts"
   },
   "devDependencies": {
     "@napi-rs/canvas": "^0.1.97",
@@ -72,6 +73,7 @@
     "oxlint": "^1.51.0",
     "oxlint-tsgolint": "^0.15.0",
     "tsgolint": "^0.0.1",
+    "tsx": "^4.20.6",
     "typescript": "6.0.2",
     "zod": "^4.3.6"
   }

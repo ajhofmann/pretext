@@ -138,27 +138,46 @@ Pretext doesn't try to be a full font rendering engine (yet?). It currently targ
 - `system-ui` is unsafe for `layout()` accuracy on macOS. Use a named font.
 - Because the default target includes `overflow-wrap: break-word`, very narrow widths can still break inside words, but only at grapheme boundaries.
 
-## Text video engine bootstrap
+## Text video engine
 
-This repo now also includes an internal bootstrap for a semantic, high-resolution text-video pipeline built on top of Pretext.
+This repo now includes a semantic, vector-first text-video engine built on top of Pretext.
 
-Key ideas:
+Core ideas:
 
-- author video as structured text/timeline JSON instead of pixel frames
-- store compressed semantic bundles as `.ptxv`
-- render vector-first SVG frames, then derive PNG/MP4 outputs as needed
+- author motion work as structured scenes and layers instead of pixels
+- keep text editable and layout-driven all the way through export
+- bundle projects and local assets into portable `.ptxv` archives
+- render SVG first, then derive PNG/MP4 outputs from that source of truth
+
+Current engine capabilities:
+
+- scene-based timeline
+- keyframed numeric and string animation
+- `text`, `image`, `shape`, and `group` layers
+- scene transitions (`fade`, wipes, slides, zoom-in)
+- portable `.ptxv` bundles with embedded local assets
+- browser preview/editor demo at `/demos/text-video-studio`
+- offline SVG/PNG frame rendering and optional MP4 assembly
 
 Starter commands:
 
 ```sh
-npm run text-video:init -- --out=examples/text-video/projects/sample
-npm run text-video:encode -- --input=examples/text-video/projects/sample/project.json --output=examples/text-video/projects/sample/project.ptxv
-npm run text-video:decode -- examples/text-video/projects/sample/project.ptxv
+npm run text-video:init -- --out=examples/text-video/projects/my-video
+npm run text-video:encode -- --input=examples/text-video/projects/my-video/project.json --output=examples/text-video/projects/my-video/project.ptxv
+npm run text-video:decode -- examples/text-video/projects/my-video/project.ptxv examples/text-video/projects/my-video/project.decoded.json
 npm run build:package
-npm run text-video:render -- --input=examples/text-video/projects/sample/project.json --out=out/text-video/sample --scale=1 --svg --video
+npm run text-video:render -- --input=examples/text-video/projects/my-video/project.json --out=out/text-video/my-video --scale=1 --svg --video
 ```
 
-See [docs/text-video-engine-plan.md](docs/text-video-engine-plan.md) for the architecture, the semantic storage plan, and the next implementation steps.
+The generated sample project demonstrates:
+
+- grouped image/logo composition
+- text blocks with animated positioning and backgrounds
+- rect shape cards
+- scene transitions
+- embedded SVG image assets
+
+See [docs/text-video-engine-plan.md](docs/text-video-engine-plan.md) for the current architecture, capabilities, and remaining gaps.
 
 ## Develop
 
