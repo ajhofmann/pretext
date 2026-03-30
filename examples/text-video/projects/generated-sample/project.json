@@ -1,0 +1,548 @@
+{
+  "format": "pretext-text-video",
+  "version": 2,
+  "info": {
+    "name": "sample-text-video",
+    "description": "A modular semantic motion graphics sample powered by Pretext.",
+    "author": "Adam Hofmann"
+  },
+  "video": {
+    "width": 1920,
+    "height": 1080,
+    "fps": 30,
+    "durationSeconds": 8,
+    "background": "#07111d"
+  },
+  "assets": [
+    {
+      "id": "font-sans",
+      "type": "font",
+      "family": "DejaVu Sans",
+      "src": "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+    },
+    {
+      "id": "font-serif",
+      "type": "font",
+      "family": "DejaVu Serif",
+      "src": "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf"
+    },
+    {
+      "id": "openai-mark",
+      "type": "image",
+      "src": "pages/assets/openai-symbol.svg",
+      "embed": true,
+      "mimeType": "image/svg+xml"
+    },
+    {
+      "id": "claude-mark",
+      "type": "image",
+      "src": "pages/assets/claude-symbol.svg",
+      "embed": true,
+      "mimeType": "image/svg+xml"
+    }
+  ],
+  "scenes": [
+    {
+      "id": "intro",
+      "start": 0,
+      "duration": 4,
+      "background": {
+        "keyframes": [
+          {
+            "time": 0,
+            "value": "#07111d"
+          },
+          {
+            "time": 4,
+            "value": "#0a1d2f",
+            "easing": "ease-in-out"
+          }
+        ]
+      },
+      "transitionIn": {
+        "type": "fade",
+        "duration": 0.6,
+        "easing": "ease-in-out"
+      },
+      "layers": [
+        {
+          "id": "backdrop",
+          "start": 0,
+          "x": 92,
+          "y": 92,
+          "opacity": {
+            "keyframes": [
+              {
+                "time": 0,
+                "value": 0.3
+              },
+              {
+                "time": 1.2,
+                "value": 0.8,
+                "easing": "ease-out"
+              }
+            ]
+          },
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "type": "shape",
+          "shape": "rect",
+          "width": 1736,
+          "height": 896,
+          "fill": "#0f172a",
+          "radius": 40
+        },
+        {
+          "id": "logo-group",
+          "start": 0,
+          "x": 1410,
+          "y": 130,
+          "opacity": 1,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "type": "group",
+          "children": [
+            {
+              "id": "openai",
+              "start": 0,
+              "x": 0,
+              "y": 0,
+              "opacity": {
+                "keyframes": [
+                  {
+                    "time": 0.2,
+                    "value": 0
+                  },
+                  {
+                    "time": 1.3,
+                    "value": 1,
+                    "easing": "ease-out"
+                  }
+                ]
+              },
+              "rotation": {
+                "keyframes": [
+                  {
+                    "time": 0,
+                    "value": -8
+                  },
+                  {
+                    "time": 2.5,
+                    "value": 8,
+                    "easing": "ease-in-out"
+                  }
+                ]
+              },
+              "scaleX": 1,
+              "scaleY": 1,
+              "type": "image",
+              "assetId": "openai-mark",
+              "width": 220,
+              "height": 220,
+              "fit": "contain",
+              "anchorX": "center",
+              "anchorY": "center",
+              "clipRadius": 0
+            },
+            {
+              "id": "claude",
+              "start": 0,
+              "x": 240,
+              "y": 40,
+              "opacity": {
+                "keyframes": [
+                  {
+                    "time": 0.4,
+                    "value": 0
+                  },
+                  {
+                    "time": 1.5,
+                    "value": 1,
+                    "easing": "ease-out"
+                  }
+                ]
+              },
+              "rotation": 0,
+              "scaleX": 1,
+              "scaleY": 1,
+              "type": "image",
+              "assetId": "claude-mark",
+              "width": 180,
+              "height": 180,
+              "fit": "contain",
+              "anchorX": "center",
+              "anchorY": "center",
+              "clipRadius": 0
+            }
+          ]
+        },
+        {
+          "id": "eyebrow",
+          "start": 0,
+          "x": {
+            "keyframes": [
+              {
+                "time": 0,
+                "value": 138
+              },
+              {
+                "time": 1.2,
+                "value": 170,
+                "easing": "ease-out"
+              }
+            ]
+          },
+          "y": 118,
+          "opacity": {
+            "keyframes": [
+              {
+                "time": 0,
+                "value": 0.15
+              },
+              {
+                "time": 1.2,
+                "value": 1,
+                "easing": "ease-in"
+              }
+            ]
+          },
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "type": "text",
+          "text": "PRETEXT VIDEO ENGINE",
+          "fontFamily": "DejaVu Sans",
+          "fontSize": 32,
+          "fontWeight": 700,
+          "fontStyle": "normal",
+          "lineHeight": 40,
+          "width": 700,
+          "color": "#7dd3fc",
+          "align": "left",
+          "anchorX": "left",
+          "anchorY": "top",
+          "whiteSpace": "normal",
+          "letterSpacing": 4,
+          "cornerRadius": 8
+        },
+        {
+          "id": "headline",
+          "start": 0,
+          "x": 140,
+          "y": 210,
+          "opacity": 1,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "type": "text",
+          "text": {
+            "keyframes": [
+              {
+                "time": 0,
+                "value": "Render semantic motion graphics from editable source."
+              },
+              {
+                "time": 2.2,
+                "value": "Render semantic motion graphics from editable source."
+              }
+            ]
+          },
+          "fontFamily": "DejaVu Serif",
+          "fontSize": {
+            "keyframes": [
+              {
+                "time": 0,
+                "value": 74
+              },
+              {
+                "time": 2.8,
+                "value": 94,
+                "easing": "ease-in-out"
+              }
+            ]
+          },
+          "fontWeight": 700,
+          "fontStyle": "normal",
+          "lineHeight": {
+            "keyframes": [
+              {
+                "time": 0,
+                "value": 88
+              },
+              {
+                "time": 2.8,
+                "value": 108,
+                "easing": "ease-in-out"
+              }
+            ]
+          },
+          "width": {
+            "keyframes": [
+              {
+                "time": 0,
+                "value": 1120
+              },
+              {
+                "time": 2.5,
+                "value": 1280,
+                "easing": "ease-out"
+              }
+            ]
+          },
+          "color": "#f8fafc",
+          "align": "left",
+          "anchorX": "left",
+          "anchorY": "top",
+          "whiteSpace": "normal",
+          "letterSpacing": 0,
+          "cornerRadius": 8,
+          "shadow": {
+            "color": "#020617",
+            "blur": 16,
+            "offsetX": 0,
+            "offsetY": 8,
+            "opacity": 0.65
+          }
+        },
+        {
+          "id": "body",
+          "start": 0,
+          "x": 150,
+          "y": {
+            "keyframes": [
+              {
+                "time": 0,
+                "value": 682
+              },
+              {
+                "time": 2.8,
+                "value": 620,
+                "easing": "ease-out"
+              }
+            ]
+          },
+          "opacity": {
+            "keyframes": [
+              {
+                "time": 0.4,
+                "value": 0
+              },
+              {
+                "time": 1.8,
+                "value": 1,
+                "easing": "ease-in"
+              }
+            ]
+          },
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "type": "text",
+          "text": "This engine stores scenes, layers, animation, and assets semantically. Pretext handles line layout; SVG keeps output crisp; MP4 stays a derived export instead of the source of truth.",
+          "fontFamily": "DejaVu Sans",
+          "fontSize": 34,
+          "fontStyle": "normal",
+          "lineHeight": 50,
+          "width": 900,
+          "color": "#cbd5e1",
+          "align": "left",
+          "anchorX": "left",
+          "anchorY": "top",
+          "whiteSpace": "normal",
+          "letterSpacing": 0,
+          "padding": {
+            "top": 20,
+            "right": 24,
+            "bottom": 20,
+            "left": 24
+          },
+          "cornerRadius": 18,
+          "background": {
+            "keyframes": [
+              {
+                "time": 0,
+                "value": "#0f172a"
+              },
+              {
+                "time": 3,
+                "value": "#132238"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "feature-grid",
+      "start": 4,
+      "duration": 4,
+      "background": "#091a2a",
+      "transitionIn": {
+        "type": "slide-left",
+        "duration": 0.8,
+        "easing": "ease-in-out"
+      },
+      "layers": [
+        {
+          "id": "hero-copy",
+          "start": 0,
+          "x": 120,
+          "y": 120,
+          "opacity": 1,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "type": "group",
+          "children": [
+            {
+              "id": "hero-title",
+              "start": 0,
+              "x": 0,
+              "y": 0,
+              "opacity": 1,
+              "rotation": 0,
+              "scaleX": 1,
+              "scaleY": 1,
+              "type": "text",
+              "text": "Customizable, layered, and bundle-aware.",
+              "fontFamily": "DejaVu Serif",
+              "fontSize": 76,
+              "fontWeight": 700,
+              "fontStyle": "normal",
+              "lineHeight": 92,
+              "width": 1100,
+              "color": "#ffffff",
+              "align": "left",
+              "anchorX": "left",
+              "anchorY": "top",
+              "whiteSpace": "normal",
+              "letterSpacing": 0,
+              "cornerRadius": 8
+            },
+            {
+              "id": "hero-subtitle",
+              "start": 0,
+              "x": 6,
+              "y": 220,
+              "opacity": 1,
+              "rotation": 0,
+              "scaleX": 1,
+              "scaleY": 1,
+              "type": "text",
+              "text": "Text, shapes, images, groups, keyframes, transitions, and embedded assets are all first-class.",
+              "fontFamily": "DejaVu Sans",
+              "fontSize": 34,
+              "fontStyle": "normal",
+              "lineHeight": 50,
+              "width": 980,
+              "color": "#dbeafe",
+              "align": "left",
+              "anchorX": "left",
+              "anchorY": "top",
+              "whiteSpace": "normal",
+              "letterSpacing": 0,
+              "cornerRadius": 8
+            }
+          ]
+        },
+        {
+          "id": "cards",
+          "start": 0,
+          "x": 120,
+          "y": 520,
+          "opacity": 1,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "type": "group",
+          "children": [
+            {
+              "id": "card-a",
+              "start": 0,
+              "x": 0,
+              "y": 0,
+              "opacity": 1,
+              "rotation": 0,
+              "scaleX": 1,
+              "scaleY": 1,
+              "type": "shape",
+              "shape": "rect",
+              "width": 520,
+              "height": 260,
+              "fill": "#10233a",
+              "radius": 28
+            },
+            {
+              "id": "card-a-copy",
+              "start": 0,
+              "x": 36,
+              "y": 36,
+              "opacity": 1,
+              "rotation": 0,
+              "scaleX": 1,
+              "scaleY": 1,
+              "type": "text",
+              "text": "Bundle local fonts and artwork into a portable .ptxv archive.",
+              "fontFamily": "DejaVu Sans",
+              "fontSize": 32,
+              "fontWeight": 700,
+              "fontStyle": "normal",
+              "lineHeight": 46,
+              "width": 440,
+              "color": "#f8fafc",
+              "align": "left",
+              "anchorX": "left",
+              "anchorY": "top",
+              "whiteSpace": "normal",
+              "letterSpacing": 0,
+              "cornerRadius": 8
+            },
+            {
+              "id": "card-b",
+              "start": 0,
+              "x": 580,
+              "y": 0,
+              "opacity": 1,
+              "rotation": 0,
+              "scaleX": 1,
+              "scaleY": 1,
+              "type": "shape",
+              "shape": "rect",
+              "width": 520,
+              "height": 260,
+              "fill": "#12324d",
+              "radius": 28
+            },
+            {
+              "id": "card-b-copy",
+              "start": 0,
+              "x": 616,
+              "y": 36,
+              "opacity": 1,
+              "rotation": 0,
+              "scaleX": 1,
+              "scaleY": 1,
+              "type": "text",
+              "text": "Drive a browser studio preview with the same schema used for offline rendering.",
+              "fontFamily": "DejaVu Sans",
+              "fontSize": 32,
+              "fontWeight": 700,
+              "fontStyle": "normal",
+              "lineHeight": 46,
+              "width": 438,
+              "color": "#f8fafc",
+              "align": "left",
+              "anchorX": "left",
+              "anchorY": "top",
+              "whiteSpace": "normal",
+              "letterSpacing": 0,
+              "cornerRadius": 8
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

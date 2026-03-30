@@ -15,7 +15,7 @@ const outputPath = path.resolve(
   outputArg ?? inputArg.replace(/\.ptxv$/i, '') + '.decoded.json',
 )
 
-const project = decodeProjectContainer(await readFile(inputPath))
+const project = decodeProjectContainer(await readFile(inputPath)).project
 await mkdir(path.dirname(outputPath), { recursive: true })
 await writeFile(outputPath, serializeProject(project), 'utf8')
 console.log(`Decoded ${inputPath} -> ${outputPath}`)

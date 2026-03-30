@@ -36,6 +36,7 @@ if (!Number.isFinite(scale) || scale <= 0) {
 }
 
 const loaded = await readProjectFromPath(inputPath)
+const assetContext = { absoluteProjectPath: loaded.absoluteProjectPath }
 const frameCount = Math.max(1, Math.round(loaded.project.video.durationSeconds * loaded.project.video.fps))
 await mkdir(outDir, { recursive: true })
 
@@ -44,12 +45,12 @@ await mkdir(framesDir, { recursive: true })
 
 for (let frameIndex = 0; frameIndex < frameCount; frameIndex++) {
   const timeSeconds = frameIndex / loaded.project.video.fps
-  const svg = await renderFrameSvg(loaded.project, timeSeconds, loaded.absoluteProjectPath)
+  const svg = await renderFrameSvg(loaded.project, timeSeconds, assetContext)
   if (writeSvg) {
     const svgPath = path.join(framesDir, `${String(frameIndex).padStart(5, '0')}.svg`)
     await writeFile(svgPath, svg)
   }
-  const png = renderSvgToPng(svg, loaded.project, loaded.absoluteProjectPath, scale)
+  const png = renderSvgToPng(svg, loaded.project, assetContext, scale)
   const pngPath = path.join(framesDir, `${String(frameIndex).padStart(5, '0')}.png`)
   await writeFile(pngPath, png)
 }
