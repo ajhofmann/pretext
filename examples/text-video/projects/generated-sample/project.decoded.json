@@ -29,14 +29,14 @@
     {
       "id": "openai-mark",
       "type": "image",
-      "src": "pages/assets/openai-symbol.svg",
+      "src": "openai-symbol.svg",
       "embed": true,
       "mimeType": "image/svg+xml"
     },
     {
       "id": "claude-mark",
       "type": "image",
-      "src": "pages/assets/claude-symbol.svg",
+      "src": "claude-symbol.svg",
       "embed": true,
       "mimeType": "image/svg+xml"
     }

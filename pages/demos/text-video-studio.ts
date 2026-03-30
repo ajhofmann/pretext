@@ -1,4 +1,4 @@
-import { createSampleProject, renderFrameSvg } from '../../shared/text-video/runtime.ts'
+import { createSampleProject } from '../../shared/text-video/runtime.ts'
 import type { TextVideoProject, Layer } from '../../shared/text-video/runtime.ts'
 
 function getRequiredElement<T extends HTMLElement>(id: string, ctor: { new(): T }): T {
@@ -21,6 +21,7 @@ const yInput = getRequiredElement('y-input', HTMLInputElement)
 const widthInput = getRequiredElement('width-input', HTMLInputElement)
 const opacityInput = getRequiredElement('opacity-input', HTMLInputElement)
 const resetButton = getRequiredElement('reset-project', HTMLButtonElement)
+const STUDIO_PROJECT_PATH = '/workspace/examples/text-video/projects/sample/project.json'
 
 const baseProject = createSampleProject()
 let project: TextVideoProject = structuredClone(baseProject)
@@ -105,7 +106,8 @@ function syncEditorFields(): void {
 }
 
 async function renderPreview(): Promise<void> {
-  const svg = await renderFrameSvg(project, currentTime, { absoluteProjectPath: '/workspace/examples/text-video/projects/generated-sample/project.json' })
+  const { renderFrameSvg } = await import('../../shared/text-video/render.ts')
+  const svg = await renderFrameSvg(project, currentTime, { absoluteProjectPath: STUDIO_PROJECT_PATH })
   previewHost.replaceChildren()
   const img = document.createElement('img')
   img.alt = 'text video preview'

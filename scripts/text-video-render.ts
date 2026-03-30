@@ -36,7 +36,10 @@ if (!Number.isFinite(scale) || scale <= 0) {
 }
 
 const loaded = await readProjectFromPath(inputPath)
-const assetContext = { absoluteProjectPath: loaded.absoluteProjectPath }
+const assetContext = {
+  absoluteProjectPath: loaded.absoluteProjectPath,
+  projectPath: loaded.absoluteProjectPath,
+}
 const frameCount = Math.max(1, Math.round(loaded.project.video.durationSeconds * loaded.project.video.fps))
 await mkdir(outDir, { recursive: true })
 

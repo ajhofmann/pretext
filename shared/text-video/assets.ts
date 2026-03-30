@@ -61,6 +61,7 @@ export async function resolveAssetSource(
   asset: TextVideoAsset,
   context: AssetContext = {},
 ): Promise<ResolvedAssetSource | null> {
+  // console.log('resolveAssetSource-debug', { assetId: asset.id, src: 'src' in asset ? asset.src : null, projectPath: context.projectPath })
   const normalizedKey = normalizeAssetReference(asset.id)
   const embedded = context.embeddedAssets?.get(normalizedKey)
   if (embedded !== undefined) {

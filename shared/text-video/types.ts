@@ -61,6 +61,7 @@ export type BundleAssetPayload = {
 
 export type AssetResolutionContext = {
   absoluteProjectPath?: string
+  projectPath?: string
   embeddedAssets?: Map<string, BundleAssetPayload>
 }
 

@@ -45,6 +45,8 @@ export {
 } from './project.ts'
 export {
   createSampleProject,
+} from './sample.ts'
+export {
   encodeProjectToContainer,
   getPrimaryAudioAsset,
   loadProjectForRender,
