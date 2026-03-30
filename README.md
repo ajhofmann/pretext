@@ -138,6 +138,28 @@ Pretext doesn't try to be a full font rendering engine (yet?). It currently targ
 - `system-ui` is unsafe for `layout()` accuracy on macOS. Use a named font.
 - Because the default target includes `overflow-wrap: break-word`, very narrow widths can still break inside words, but only at grapheme boundaries.
 
+## Text video engine bootstrap
+
+This repo now also includes an internal bootstrap for a semantic, high-resolution text-video pipeline built on top of Pretext.
+
+Key ideas:
+
+- author video as structured text/timeline JSON instead of pixel frames
+- store compressed semantic bundles as `.ptxv`
+- render vector-first SVG frames, then derive PNG/MP4 outputs as needed
+
+Starter commands:
+
+```sh
+npm run text-video:init -- --out=examples/text-video/projects/sample
+npm run text-video:encode -- --input=examples/text-video/projects/sample/project.json --output=examples/text-video/projects/sample/project.ptxv
+npm run text-video:decode -- examples/text-video/projects/sample/project.ptxv
+npm run build:package
+npm run text-video:render -- --input=examples/text-video/projects/sample/project.json --out=out/text-video/sample --scale=1 --svg --video
+```
+
+See [docs/text-video-engine-plan.md](docs/text-video-engine-plan.md) for the architecture, the semantic storage plan, and the next implementation steps.
+
 ## Develop
 
 See [DEVELOPMENT.md](DEVELOPMENT.md) for the dev setup and commands.
