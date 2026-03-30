@@ -110,3 +110,13 @@ See `DEVELOPMENT.md` for the current command surface and packaging/release check
 ### Related
 
 - `../text-layout/` — Sebastian Markbage's original prototype + our experimental variants.
+
+## Cursor Cloud specific instructions
+
+- **Runtime**: Bun is required. If not present, install via `npm install -g bun`. The project has zero runtime dependencies; all `devDependencies` install in under a second.
+- **Commands**: See `DEVELOPMENT.md` for the full command list. Key daily commands: `bun test`, `bun run check`, `bun run build:package`, `bun start`.
+- **Dev server**: `bun start` serves all pages at `http://127.0.0.1:3000`. The `start` script automatically frees port 3000 if occupied. No trailing slashes on routes (Bun devserver limitation).
+- **Text-video scripts**: The `text-video:*` scripts use Node (`node --experimental-transform-types`) not Bun. They require `@napi-rs/canvas` and `@resvg/resvg-js` (native modules). The `text-video:render --video` flag requires `ffmpeg` on PATH.
+- **Text-video studio page**: `/demos/text-video-studio` currently 500s in the Bun dev server because it transitively imports native `.node` modules (`@napi-rs/canvas`, `@resvg/resvg-js`) which cannot be bundled for the browser. All other demo/accuracy/benchmark pages serve correctly.
+- **Browser automation**: The `accuracy-check`, `benchmark-check`, `corpus-check`, and related scripts rely on macOS AppleScript and will not run on Linux VMs. Unit tests (`bun test`), typecheck/lint (`bun run check`), and the dev server work without browsers.
+- **No external services**: This is a pure library with no databases, Docker, or network dependencies. All tests are self-contained.
