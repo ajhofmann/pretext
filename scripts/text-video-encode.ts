@@ -20,7 +20,7 @@ if (!inputPath || !outputPath) {
 
 const projectJson = await readFile(path.resolve(process.cwd(), inputPath), 'utf8')
 const project = parseProjectJson(projectJson)
-const payload = encodeProjectToContainer(project)
+const payload = await encodeProjectToContainer(project, path.resolve(process.cwd(), inputPath))
 
 await writeFile(path.resolve(process.cwd(), outputPath), payload)
 console.log(`Encoded ${inputPath} -> ${outputPath} (${payload.byteLength} bytes)`)

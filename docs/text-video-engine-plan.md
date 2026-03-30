@@ -1,4 +1,4 @@
-## Pretext text-video engine bootstrap plan
+## Pretext text-video engine plan
 
 This repo can support a high-customization text-video renderer by leaning into what Pretext already does unusually well:
 
@@ -6,7 +6,7 @@ This repo can support a high-customization text-video renderer by leaning into w
 - rich line extraction via `prepareWithSegments()` + `layoutWithLines()`
 - resolution-independent layout decisions that can feed SVG, Canvas, WebGL, or server-side outputs
 
-The bootstrap added in this change is intentionally semantic-first instead of pixel-first.
+The engine is intentionally semantic-first instead of pixel-first.
 
 ### Core idea
 
@@ -22,9 +22,9 @@ That gives us:
 - text that stays editable and compact while stored
 - future room for alternate targets like posters, animated SVG, sprite sheets, or real-time previews
 
-## What was initialized
+## What is now implemented
 
-### New dependencies
+### Runtime/build dependencies
 
 - `@napi-rs/canvas`
   - headless canvas backend for Node
@@ -35,7 +35,7 @@ That gives us:
 - `zod`
   - schema validation for the semantic text-video project format
 
-### New commands
+### Commands
 
 - `npm run text-video:init -- --out=examples/text-video/projects/my-video`
   - creates a starter semantic text-video project
@@ -49,14 +49,19 @@ That gives us:
 
 ## Semantic storage format
 
-The bootstrap defines a simple `pretext-text-video` schema:
+The current `pretext-text-video` schema supports:
 
 - project metadata
 - video dimensions and FPS
-- font list
-- scenes
-- text layers
-- animated numeric properties (`from`, `to`, `easing`)
+- asset manifests for fonts and images
+- multi-scene timelines
+- scene transitions
+- layer unions:
+  - `text`
+  - `image`
+  - `shape`
+  - `group`
+- keyframe-capable animated values for numeric and string properties
 
 ### Why semantic storage matters
 
@@ -67,33 +72,41 @@ Instead the `.ptxv` format stores:
 - JSON metadata
 - gzipped UTF-8 payload
 
-This is the first step toward a fuller archive format that can later include:
+The current `.ptxv` container now supports:
 
-- embedded fonts
-- image assets
-- audio tracks
-- per-scene reusable prepared-text caches
-- deduplicated text fragments
-- optional line-layout caches for preview acceleration
+- versioned bundle manifests
+- embedded local assets referenced by the project
+- legacy decode support for older header + gzipped-JSON bundles
 
-## Initial renderer shape
+Still not implemented in the container:
 
-The current bootstrap renderer is:
+- audio embedding/mux metadata
+- line-layout cache snapshots
+- deduplicated symbol dictionaries
+
+## Renderer shape
+
+The current renderer is:
 
 - server-side
 - vector-first
-- text-layer focused
+- composition focused
 
-For each frame:
+For each frame it will:
 
 1. choose the active scene
-2. evaluate animated properties at the current timestamp
+2. evaluate keyframed properties at the current timestamp
 3. register fonts for measurement/rasterization
-4. run `prepareWithSegments()` with the resolved font
-5. call `layoutWithLines()` for exact line breaking
-6. emit SVG text lines with alignment, transforms, stroke, shadow, and background blocks
-7. rasterize to PNG through Resvg
-8. optionally hand the frame sequence to `ffmpeg`
+4. evaluate scene transitions
+5. run `prepareWithSegments()` with the resolved font for text layers
+6. call `layoutWithLines()` for exact line breaking
+7. emit SVG for:
+   - text
+   - shapes
+   - images
+   - nested groups
+8. rasterize to PNG through Resvg
+9. optionally hand the frame sequence to `ffmpeg`
 
 ## Why this scales to very high resolution
 
@@ -109,14 +122,24 @@ By emitting SVG:
 
 PNG and MP4 are derived outputs, not the source of truth.
 
+## Current forced gaps
+
+These gaps remain after the current implementation pass:
+
+- no audio muxing in the render pipeline yet
+- no browser-side project import/export beyond the built-in sample/studio state
+- no timeline curve editor or richer authoring UI than the basic studio controls
+- no dedicated masking/blend-mode/effect stack
+- no automated browser UI test for the studio page
+- static site build still depends on Bun being present in PATH in the environment
+
 ## Near-term next steps
 
 ### 1. Richer timeline/composition model
 
 Add:
 
-- layer enter/exit transitions
-- keyframe arrays instead of simple `from/to`
+- per-layer enter/exit transitions
 - per-line animation controls
 - camera transforms
 - scene overlap and compositing
@@ -137,7 +160,7 @@ Add:
 
 Evolve `.ptxv` into an archive that can:
 
-- embed fonts and assets
+- embed fonts and assets more selectively
 - store reusable symbol dictionaries
 - delta-compress repeated captions across frames/scenes
 - cache line geometry for low-latency previews
@@ -148,16 +171,21 @@ Add:
 
 - browser preview demo under `pages/demos/`
 - scrubber and property editor
-- live reload between project JSON and rendered preview
+- import/export of project JSON
 - preset packs for lyric videos, motion posters, subtitles, editorial reels
 
-## Suggested implementation sequence
+## Validation checkpoints
 
-1. Keep the semantic project format stable enough for iteration.
-2. Add a browser demo/editor for previewing the same project schema.
-3. Expand the renderer from plain text layers to grouped compositions and obstacles.
-4. Add asset embedding to the `.ptxv` archive.
-5. Add tests for schema validation, encode/decode roundtrips, and basic render invariants.
+The current implementation has been exercised with:
+
+1. TypeScript repo-wide typecheck (`npx tsc --pretty false`)
+2. package build (`npm run build:package`)
+3. sample project scaffolding (`npm run text-video:init`)
+4. project bundle encode/decode (`npm run text-video:encode`, `npm run text-video:decode`)
+5. frame rendering from JSON and bundled `.ptxv` (`npm run text-video:render`)
+6. package smoke test through Bun invoked via `npx --yes bun`
+
+The site build was attempted via `npx --yes bun run scripts/build-demo-site.ts` and currently fails because the build pipeline tries to bundle Node-only `.node` native dependencies into the browser build.
 
 ## Example workflow
 

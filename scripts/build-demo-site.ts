@@ -3,7 +3,7 @@ import path from 'node:path'
 
 const root = process.cwd()
 const outdir = path.join(root, 'site')
-const entrypoints = [
+const allEntrypoints = [
   'pages/demos/index.html',
   'pages/demos/accordion.html',
   'pages/demos/bubbles.html',
@@ -12,8 +12,15 @@ const entrypoints = [
   'pages/demos/justification-comparison.html',
   'pages/demos/masonry/index.html',
   'pages/demos/rich-note.html',
+  'pages/demos/text-video-studio.html',
   'pages/demos/variable-typographic-ascii.html',
-]
+] as const
+
+const browserUnsafeEntrypoints = new Set([
+  'pages/demos/text-video-studio.html',
+])
+
+const entrypoints = allEntrypoints.filter(entrypoint => !browserUnsafeEntrypoints.has(entrypoint))
 
 const result = Bun.spawnSync(
   ['bun', 'build', ...entrypoints, '--outdir', outdir],
