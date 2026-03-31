@@ -27,6 +27,12 @@ Current priorities:
 - Phase 1 (resolution): sub-character brightness via variable font weight, proportional-font width budgeting, multi-style palettes, ordered dithering, edge-directed character selection.
 - Phase 2 (temporal): per-cell brightness smoothing, character stability scoring, scrolling text fusion, optical flow-guided direction, beat-driven layout pulsing.
 - Phase 3 (spatial): silhouette masking with `layoutNextLine()`, multi-column flow, gravity/density-based text clustering, text-shaped masks.
+- Current implementation now includes:
+  - configurable CLI presets / layouts / subtitle and description sidecars
+  - `ASCV2` rich glyph serialization in addition to legacy `ASCV1`
+  - SVG frame export, `.ptxv` export, and stdin rawvideo ingestion
+  - text-video engine support for embedded ascii-video assets/layers
+  - `/demos/mp4toascii` browser demo with live controls and exports
 - See `docs/mp4toascii-plan.md` for the full phased roadmap.
 - The silhouette masking (3.1) and proportional width budgeting (1.2) are the highest-value Pretext-native features.
 - Keep the CLI stateless and HTML output self-contained.

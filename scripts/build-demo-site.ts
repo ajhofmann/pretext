@@ -11,6 +11,7 @@ const allEntrypoints = [
   'pages/demos/editorial-engine.html',
   'pages/demos/justification-comparison.html',
   'pages/demos/masonry/index.html',
+  'pages/demos/mp4toascii.html',
   'pages/demos/rich-note.html',
   'pages/demos/text-video-studio.html',
   'pages/demos/variable-typographic-ascii.html',
@@ -43,6 +44,7 @@ const targets = [
   { source: 'editorial-engine.html', target: 'editorial-engine/index.html' },
   { source: 'justification-comparison.html', target: 'justification-comparison/index.html' },
   { source: 'masonry/index.html', target: 'masonry/index.html' },
+  { source: 'mp4toascii.html', target: 'mp4toascii/index.html' },
   { source: 'rich-note.html', target: 'rich-note/index.html' },
   { source: 'variable-typographic-ascii.html', target: 'variable-typographic-ascii/index.html' },
 ]

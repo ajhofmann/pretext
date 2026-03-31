@@ -1,5 +1,6 @@
 import { evaluateColorValue, evaluateNumericValue } from './animation.ts'
 import type {
+  AsciiVideoLayer,
   GroupLayer,
   ImageLayer,
   Layer,
@@ -10,9 +11,10 @@ import type {
   TextVideoProject,
   TextVideoScene,
 } from './schema.ts'
-import { isImageLayer, isShapeLayer, isTextLayer } from './type-guards.ts'
+import { isAsciiVideoLayer, isImageLayer, isShapeLayer, isTextLayer } from './type-guards.ts'
 import type {
   ActiveScene,
+  EvaluatedAsciiVideoLayer,
   EvaluatedImageLayer,
   EvaluatedLayer,
   EvaluatedLayerBase,
@@ -62,7 +64,7 @@ function mergeTransforms(parent: ParentTransform, child: EvaluatedLayerBase): Ev
 }
 
 function evaluateBaseTransform(
-  layer: TextLayer | ImageLayer | ShapeLayer | GroupLayer,
+  layer: TextLayer | ImageLayer | AsciiVideoLayer | ShapeLayer | GroupLayer,
   sceneStart: number,
   timeSeconds: number,
 ): EvaluatedLayerBase {
@@ -122,6 +124,24 @@ function evaluateImageLayer(layer: ImageLayer, sceneStart: number, timeSeconds: 
     anchorX: layer.anchorX,
     anchorY: layer.anchorY,
     clipRadius: layer.clipRadius,
+  }
+}
+
+function evaluateAsciiVideoLayer(layer: AsciiVideoLayer, sceneStart: number, timeSeconds: number): EvaluatedAsciiVideoLayer {
+  const base = evaluateBaseTransform(layer, sceneStart, timeSeconds)
+  const evaluationTime = getLayerEvaluationTime(layer, sceneStart, timeSeconds)
+  return {
+    ...base,
+    type: 'ascii-video',
+    source: layer,
+    assetId: layer.assetId,
+    width: evaluateNumericValue(layer.width, evaluationTime),
+    height: evaluateNumericValue(layer.height, evaluationTime),
+    fit: layer.fit,
+    anchorX: layer.anchorX,
+    anchorY: layer.anchorY,
+    showBackground: layer.showBackground,
+    currentTimeSeconds: timeSeconds,
   }
 }
 
@@ -185,6 +205,9 @@ export function evaluateLayerForRender(
   }
   if (isImageLayer(layer)) {
     return mergeTransforms(parent, evaluateImageLayer(layer, 0, sceneTimeSeconds)) as EvaluatedImageLayer
+  }
+  if (isAsciiVideoLayer(layer)) {
+    return mergeTransforms(parent, evaluateAsciiVideoLayer(layer, 0, sceneTimeSeconds)) as EvaluatedAsciiVideoLayer
   }
   if (isShapeLayer(layer)) {
     return mergeTransforms(parent, evaluateShapeLayer(layer, 0, sceneTimeSeconds)) as EvaluatedShapeLayer

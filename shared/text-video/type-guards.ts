@@ -17,6 +17,10 @@ export function isImageLayer(layer: Layer): layer is Extract<Layer, { type: 'ima
   return (layer as TypeCarrier).type === 'image'
 }
 
+export function isAsciiVideoLayer(layer: Layer): layer is Extract<Layer, { type: 'ascii-video' }> {
+  return (layer as TypeCarrier).type === 'ascii-video'
+}
+
 export function isShapeLayer(layer: Layer): layer is Extract<Layer, { type: 'shape' }> {
   return (layer as TypeCarrier).type === 'shape'
 }
@@ -31,6 +35,10 @@ export function isEvaluatedTextLayer(layer: EvaluatedLayer): layer is EvaluatedT
 
 export function isEvaluatedImageLayer(layer: EvaluatedLayer): layer is EvaluatedImageLayer {
   return (layer as TypeCarrier).type === 'image'
+}
+
+export function isEvaluatedAsciiVideoLayer(layer: EvaluatedLayer): layer is import('./types.ts').EvaluatedAsciiVideoLayer {
+  return (layer as TypeCarrier).type === 'ascii-video'
 }
 
 export function isEvaluatedShapeLayer(layer: EvaluatedLayer): layer is EvaluatedShapeLayer {

@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Added
+
+- `mp4toascii` now supports preset- and layout-driven rich glyph rendering modes (`mono`, `palette`, `fusion`) with ordered dithering, edge-aware glyph selection, temporal smoothing, scrolling fusion, silhouette/column/band/depth routing, subtitle/description sidecars, PTXV export, SVG frame export, and stdin rawvideo ingestion.
+- The text-video engine now supports embedded `ascii-video` assets/layers for semantic ASCII-video/PTXV workflows.
+- Added a new `/demos/mp4toascii` browser demo for uploading a video, tuning presets, and exporting HTML/PTXV/SVG outputs.
+
 ## 0.0.3 - 2026-03-29
 
 ### Changed

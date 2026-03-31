@@ -15,12 +15,16 @@ This document describes the phased plan for turning the current prototype into a
 
 | Component | File | Status |
 |-----------|------|--------|
-| Frame extraction via ffmpeg | `shared/mp4toascii/extract.ts` | Working — `probeVideo()`, `extractFrames()` |
+| Frame extraction via ffmpeg / raw stdin | `shared/mp4toascii/extract.ts` | Working — `probeVideo()`, `extractFrames()`, `extractFramesFromRawVideo()` |
 | Mono ASCII mapping | `shared/mp4toascii/ascii-map.ts` | Working — brightness ramp, optional color |
-| Fusion text layout | `shared/mp4toascii/fusion.ts` | Working — `layoutTextPositions()`, `fuseFrameWithText()` |
-| Output renderers | `shared/mp4toascii/render.ts` | Working — terminal ANSI, HTML, MP4 re-render |
-| CLI | `scripts/mp4toascii.ts` | Working — `bun run mp4toascii` |
-| .ascv format | `shared/mp4toascii/ascv.ts` | Working — encode, parse, play, convert to HTML |
+| Palette + dither + edge scoring | `shared/mp4toascii/palette.ts`, `dither.ts`, `edge.ts` | Working — proportional palette construction, Bayer dithering, Sobel direction analysis |
+| Temporal + content helpers | `shared/mp4toascii/temporal.ts`, `content.ts`, `config.ts` | Working — smoothing, stability, cut heuristics, cue/bank selection, CLI config parsing |
+| Fusion / routed text layout | `shared/mp4toascii/fusion.ts` | Working — fixed-line fusion, proportional palette mapping, routed silhouette/column/band/depth layouts |
+| Output renderers | `shared/mp4toascii/render.ts`, `svg.ts` | Working — terminal ANSI, self-contained HTML, SVG, MP4 re-render |
+| CLI | `scripts/mp4toascii.ts` | Working — mono/palette/fusion modes, presets, PTXV/SVG/MP4/ASCV output, stdin input |
+| .ascv format | `shared/mp4toascii/ascv.ts` | Working — legacy `ASCV1` plus rich `ASCV2` encode/parse/playback |
+| PTXV semantic export | `shared/text-video/ascii-video.ts` + text-video runtime | Working — rich glyph video asset/layer export and render |
+| Browser demo | `pages/demos/mp4toascii.*` | Working — upload, playback, presets, split preview, export to HTML/ASCV/PTXV |
 
 Dependencies: `ffmpeg` + `ffprobe` on PATH, `@napi-rs/canvas` for pixel buffer I/O, `dist/layout.js` for fusion mode (run `bun run build:package` first).
 
@@ -28,7 +32,14 @@ Dependencies: `ffmpeg` + `ffprobe` on PATH, `@napi-rs/canvas` for pixel buffer I
 
 The `.ascv` format is a portable, gzip-compressed text container for ASCII video. Encode a video once, share the tiny `.ascv` file (typically 10–50KB), and anyone can play it back without the source video or any video processing tools.
 
-Format: `ASCV1` magic (5 bytes) + gzip payload. The payload is line-delimited text: a header line with metadata (cols, rows, fps, frame count, mode, color flag), then frame blocks. Each frame stores character lines with tab-separated hex brightness values and optional hex RGB color channels.
+Format:
+
+- `ASCV1` magic (5 bytes) + gzip payload for classic grid frames
+- `ASCV2` magic (5 bytes) + gzip JSON payload for positioned, styled rich glyph frames
+
+`ASCV1` stores line-delimited text with a header line (cols, rows, fps, frame count, mode, color flag), then frame blocks. Each frame stores character lines with tab-separated hex brightness values and optional hex RGB color channels.
+
+`ASCV2` stores the richer proportional/fusion representation: style tables, line buckets, and positioned glyph brightness/color data suitable for HTML/SVG/PTXV renderers.
 
 ```sh
 bun run mp4toascii -- --input=video.mp4 --mode=mono --output=video.ascv

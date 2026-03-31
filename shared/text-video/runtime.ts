@@ -47,6 +47,14 @@ export {
   createSampleProject,
 } from './sample.ts'
 export {
+  decodeAsciiVideoAsset,
+  encodeAsciiVideoAssetData,
+  frameToAsciiVideoData,
+  renderAsciiVideoFrameToSvg,
+  encodeAsciiVideoAsset,
+  renderAsciiVideoLayerSvg,
+} from './ascii-video.ts'
+export {
   encodeProjectToContainer,
   getPrimaryAudioAsset,
   loadProjectForRender,

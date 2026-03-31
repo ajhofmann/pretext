@@ -1,12 +1,19 @@
 import { Resvg } from '@resvg/resvg-js'
 
-import { collectEmbeddableAssets, resolveImageHref, resolveProjectAssetMap } from './assets.ts'
+import { renderAsciiVideoLayerSvg } from './ascii-video.ts'
+import {
+  collectEmbeddableAssets,
+  getResolvedAssetData,
+  resolveImageHref,
+  resolveProjectAssetMap,
+} from './assets.ts'
 import { evaluateLayerForRender, evaluateProjectSceneState } from './evaluate.ts'
 import { readProjectFromPath } from './project.ts'
 import { type AudioAsset, type TextVideoProject, textVideoProjectSchema } from './schema.ts'
 import { colorWithOpacity, svgElement, svgVoidElement, xmlEscape } from './svg.ts'
 import { ensureNodeMeasurementBackend, layoutTextLayer, loadPretextModule, registerProjectFonts } from './text.ts'
 import type {
+  EvaluatedAsciiVideoLayer,
   AssetResolutionContext,
   EmbeddedAssetRecord,
   EvaluatedGroupLayer,
@@ -80,6 +87,10 @@ function isImageLayer(layer: EvaluatedLayer): layer is EvaluatedImageLayer {
 
 function isGroupLayer(layer: EvaluatedLayer): layer is EvaluatedGroupLayer {
   return layer.type === 'group'
+}
+
+function isAsciiVideoLayer(layer: EvaluatedLayer): layer is EvaluatedAsciiVideoLayer {
+  return layer.type === 'ascii-video'
 }
 
 async function renderTextLayer(context: RenderContext, layer: EvaluatedTextLayer): Promise<string> {
@@ -281,6 +292,26 @@ async function renderImageLayer(context: RenderContext, layer: EvaluatedImageLay
   )
 }
 
+async function renderAsciiVideoLayer(context: RenderContext, layer: EvaluatedAsciiVideoLayer): Promise<string> {
+  const asset = context.assetMap.get(layer.assetId)
+  if (asset === undefined || asset.type !== 'ascii-video') {
+    throw new Error(`ASCII video layer "${layer.id}" references missing asset "${layer.assetId}"`)
+  }
+
+  const bytes = await getResolvedAssetData(asset, context.assetContext)
+  if (bytes === null) {
+    throw new Error(`Unable to resolve ASCII video asset "${asset.id}"`)
+  }
+
+  return renderAsciiVideoLayerSvg(
+    layer,
+    asset,
+    bytes,
+    layer.currentTimeSeconds,
+    context.assetContext,
+  )
+}
+
 async function renderGroupLayer(context: RenderContext, layer: EvaluatedGroupLayer, sceneTime: number): Promise<string> {
   const children: string[] = []
   for (let index = 0; index < layer.children.length; index++) {
@@ -294,6 +325,7 @@ async function renderEvaluatedLayer(context: RenderContext, layer: EvaluatedLaye
   if (isTextLayer(layer)) return renderTextLayer(context, layer)
   if (isShapeLayer(layer)) return Promise.resolve(renderShapeLayer(layer))
   if (isImageLayer(layer)) return renderImageLayer(context, layer)
+  if (isAsciiVideoLayer(layer)) return renderAsciiVideoLayer(context, layer)
   if (isGroupLayer(layer)) return renderGroupLayer(context, layer, sceneTime)
   return ''
 }
@@ -431,9 +463,15 @@ export async function renderFrameSvg(
 export async function encodeProjectToContainer(
   project: TextVideoProject,
   absoluteProjectPath?: string,
+  extraEmbeddedAssets?: Map<string, { key: string, bytes: Uint8Array, mimeType: string | undefined, originalPath: string | undefined }>,
 ): Promise<Buffer> {
   const { encodeProjectBundle } = await import('./container.ts')
   const embeddedAssets = await collectEmbeddableAssets(project, absoluteProjectPath)
+  if (extraEmbeddedAssets !== undefined) {
+    for (const [id, payload] of extraEmbeddedAssets) {
+      embeddedAssets.set(id, payload)
+    }
+  }
   const assets: EmbeddedAssetRecord[] = []
   for (const [id, payload] of embeddedAssets) {
     assets.push({

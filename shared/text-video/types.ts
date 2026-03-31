@@ -14,6 +14,7 @@ import type {
   TextVideoAsset,
   TextVideoProject,
 } from './schema.ts'
+import type { RichFrame } from '../mp4toascii/types.ts'
 
 export type PretextModule = Pick<
   typeof import('../../src/layout.ts'),
@@ -159,6 +160,19 @@ export type EvaluatedImageLayer = EvaluatedLayerBase & {
   clipRadius: number
 }
 
+export type EvaluatedAsciiVideoLayer = EvaluatedLayerBase & {
+  type: 'ascii-video'
+  source: import('./schema.ts').AsciiVideoLayer
+  assetId: string
+  width: number
+  height: number
+  fit: 'contain' | 'cover' | 'stretch'
+  anchorX: 'left' | 'center' | 'right'
+  anchorY: 'top' | 'center' | 'bottom'
+  showBackground: boolean
+  currentTimeSeconds: number
+}
+
 export type EvaluatedRectShapeLayer = EvaluatedLayerBase & {
   type: 'shape'
   source: Extract<ShapeLayer, { shape: 'rect' }>
@@ -212,8 +226,22 @@ export type EvaluatedGroupLayer = EvaluatedLayerBase & {
 export type EvaluatedLayer =
   | EvaluatedTextLayer
   | EvaluatedImageLayer
+  | EvaluatedAsciiVideoLayer
   | EvaluatedShapeLayer
   | EvaluatedGroupLayer
+
+export type AsciiVideoAssetPayload = {
+  version: 1
+  fps: number
+  frameCount: number
+  width: number
+  height: number
+  background: string
+  styles: RichFrame['styles']
+  mode: 'mono' | 'palette' | 'fusion'
+  color: boolean
+  frames: RichFrame[]
+}
 
 export type ActiveScene = {
   scene: TextVideoProject['scenes'][number]

@@ -65,6 +65,7 @@
     "text-video:init": "node --experimental-transform-types scripts/text-video-init.ts",
     "text-video:render": "node --experimental-transform-types scripts/text-video-render.ts",
     "test:text-video": "node --import tsx --test shared/text-video/engine.test.ts",
+    "test:mp4toascii": "bun test shared/mp4toascii/engine.test.ts",
     "mp4toascii": "node --experimental-transform-types scripts/mp4toascii.ts"
   },
   "devDependencies": {
