@@ -181,29 +181,52 @@ See [docs/text-video-engine-plan.md](docs/text-video-engine-plan.md) for the cur
 
 ## mp4toascii
 
-Convert any video to ASCII text art. Two rendering modes:
+Convert any video to ASCII text art. The engine now supports three rendering modes:
 
-**Mono mode** — classic monospace ASCII art. Maps pixel brightness to characters from a density ramp.
+- **Mono** — classic monospace brightness-ramp ASCII
+- **Palette** — proportional typographic ASCII using measured glyph palettes, ordered dithering, edge biasing, temporal smoothing, and layout presets
+- **Fusion** — readable prose routed by Pretext, including scrolling, silhouette-aware flow, columns, bands, headline masks, and depth-style sizing
 
-**Fusion mode** — the Pretext-powered mode. Takes real readable text and lays it out using `prepareWithSegments()` + `layoutWithLines()`. Each character's brightness is sampled from the corresponding video frame pixel. The result is readable prose that visually forms the video image through per-character opacity modulation.
+Core CLI examples:
 
 ```sh
 bun run build:package
-bun run mp4toascii -- --input=video.mp4 --mode=fusion --cols=120 --fps=10 --output=output.html
 bun run mp4toascii -- --input=video.mp4 --mode=mono --cols=80 --invert --output=ascii.html
+bun run mp4toascii -- --input=video.mp4 --mode=palette --preset=newspaper --cols=100 --output=palette.html
+bun run mp4toascii -- --input=video.mp4 --mode=fusion --layout=silhouette --text=corpora/mixed-app-text.txt --output=fusion.html
 ```
 
-Share as a portable `.ascv` text file (typically 10–50KB):
+Portable formats and exports:
 
 ```sh
-bun run mp4toascii -- --input=video.mp4 --output=video.ascv
-bun run mp4toascii -- --play=video.ascv                        # terminal playback
-bun run mp4toascii -- --play=video.ascv --output=player.html   # generate HTML player
+bun run mp4toascii -- --input=video.mp4 --mode=palette --output=video.ascv
+bun run mp4toascii -- --input=video.mp4 --mode=fusion --output=video.ptxv
+bun run mp4toascii -- --input=video.mp4 --mode=fusion --output=svg-frames
+bun run mp4toascii -- --play=video.ascv
+bun run mp4toascii -- --play=video.ascv --output=player.html
 ```
 
-Options: `--cols`, `--rows`, `--fps`, `--mode=mono|fusion`, `--output` (`.ascv`, `.html`, `.mp4`, `.txt`, or `-` for terminal), `--invert`, `--color`, `--text=<source.txt>`, `--max-frames`, `--play=<file.ascv>`.
+Notable controls:
 
-See [docs/mp4toascii-plan.md](docs/mp4toascii-plan.md) for the roadmap.
+- `--mode=mono|palette|fusion`
+- `--layout=grid|pulse|silhouette|columns|bands|headline-mask|depth`
+- `--preset=terminal|newspaper|typewriter|concrete-poetry|editorial|cipher|matrix-rain`
+- `--subtitle-file=<file.srt|file.vtt>`
+- `--description-file=<file.json>`
+- `--banks=<bank-id-or-text-file,...>`
+- `--weights=300,500,700`
+- `--styles=normal,italic`
+- `--palette-fonts=<fontA,fontB>`
+- `--dither=none|bayer2|bayer4|bayer8`
+- `--smoothing`, `--stability`, `--scroll-step`, `--scroll-modulation`
+- `--silhouette-threshold`, `--columns`, `--bands`, `--mask-text`, `--slot-padding`
+- `--stdin --width=<w> --height=<h> [--pix-fmt=gray|rgb24]` for rawvideo pipes
+
+Browser demo:
+
+- `/demos/mp4toascii`
+
+See [docs/mp4toascii-plan.md](docs/mp4toascii-plan.md) for the roadmap and design notes.
 
 ## Develop
 

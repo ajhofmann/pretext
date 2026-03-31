@@ -43,6 +43,7 @@ Useful pages:
 - `/demos/accordion`
 - `/demos/bubbles`
 - `/demos/dynamic-layout`
+- `/demos/mp4toascii`
 - `/demos/justification-comparison`
 - `/demos/text-video-studio`
 - `/demos/editorial-engine`
@@ -65,9 +66,12 @@ Text-video bootstrap notes:
 mp4toascii notes:
 - See `docs/mp4toascii-plan.md` for the phased roadmap.
 - Requires `ffmpeg` and `ffprobe` on PATH, plus a built Pretext package (`bun run build:package`) for fusion mode.
-- Two modes: `mono` (classic brightness ramp) and `fusion` (Pretext-powered text-image fusion where real prose is brightness-modulated by the video).
-- Output targets: `.ascv` (shareable text container), terminal (ANSI), self-contained HTML with playback, MP4 re-render.
+- Modes: `mono`, `palette`, and `fusion`.
+- Layouts: `grid`, `pulse`, `silhouette`, `columns`, `bands`, `headline-mask`, and `depth`.
+- Output targets: `.ascv` (shareable text container), terminal (ANSI), self-contained HTML with playback, SVG frame directories, `.ptxv`, and MP4 re-render.
 - `.ascv` is a portable gzip-compressed text format. Encode once, share the file (~10–50KB), play back anywhere with `--play=file.ascv`.
+- Sidecar content sources are supported via subtitle (`.srt` / `.vtt`) and description (`.json`) inputs.
+- Rich outputs use the safe DOM HTML player in `shared/mp4toascii/html-player.ts` and can be exported semantically through the text-video `.ptxv` path.
 - Source modules live in `shared/mp4toascii/`; CLI entry point is `scripts/mp4toascii.ts`.
 
 ## Current Sources Of Truth
