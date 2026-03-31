@@ -185,7 +185,7 @@ export function selectContentText(
     return { text: options.text, cue: null, bank: null }
   }
 
-  if (options.cycleOnCuts || cut) {
+  if (options.cycleOnCuts && cut) {
     const bank = banks[frameIndex % banks.length]!
     return { text: bank.text, cue: null, bank }
   }
