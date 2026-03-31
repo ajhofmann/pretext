@@ -85,11 +85,7 @@ function rgbStyle(color: SerializedRgbColor): string {
 }
 
 function escapeForInlineScript(input: string): string {
-  return input
-    .replaceAll('\\', '\\\\')
-    .replaceAll('`', '\\`')
-    .replaceAll('${', '\\${')
-    .replaceAll('</script', '<\\/script')
+  return input.replaceAll('</script', '<\\/script')
 }
 
 function renderGridFrame(
