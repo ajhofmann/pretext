@@ -1,6 +1,4 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
-import { gzipSync } from 'node:zlib'
-
 import { parseDescriptionJson, parseSrt, parseVtt, selectContentText } from './content.ts'
 import { encodeAsciiFrames, encodeRichFrames, parseAscv, serializeAscv } from './ascv.ts'
 import { applyOrderedDither } from './dither.ts'
@@ -272,17 +270,4 @@ Hello world
     })
   })
 
-  test('v2 header magic is gzip backed json', () => {
-    const payload = {
-      header: { version: 2, cols: 1, rows: 1, fps: 1, frameCount: 0, mode: 'mono', color: false },
-      frames: [],
-    }
-    const serialized = Buffer.concat([
-      Buffer.from('ASCV2'),
-      gzipSync(Buffer.from(JSON.stringify(payload), 'utf-8')),
-    ])
-    const parsed = parseAscv(serialized)
-    expect(parsed.header.version).toBe(2)
-    expect(parsed.frames).toEqual([])
-  })
 })

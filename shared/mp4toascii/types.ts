@@ -213,6 +213,16 @@ export type RichFusionRuntimeOptions = {
   cutThreshold: number
 }
 
+export type SpatialRuntimeOptions = {
+  silhouetteThreshold: number
+  slotPadding: number
+  columnCount: number
+  bandCount: number
+  maskText: string
+  depthMinFontSize: number
+  depthMaxFontSize: number
+}
+
 export type LayoutSlot = {
   left: number
   right: number

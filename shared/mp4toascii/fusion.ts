@@ -68,6 +68,13 @@ export type RichFusionOptions = FusionOptions & {
   scrollModulation?: 'none' | 'brightness' | 'motion'
   pulseStrength?: number
   cutThreshold?: number
+  silhouetteThreshold?: number
+  columnCount?: number
+  bandCount?: number
+  maskText?: string
+  slotPadding?: number
+  depthMinFontSize?: number
+  depthMaxFontSize?: number
   previousFrame?: RichFrame | null
   previousPixels?: FramePixels | null
   dither?: 'none' | 'bayer2' | 'bayer4' | 'bayer8'
@@ -448,6 +455,138 @@ export function layoutPositionedTextLines(
   return lines
 }
 
+function resolveSilhouetteSlots(
+  frame: FramePixels,
+  width: number,
+  threshold: number,
+  padding: number,
+): LayoutSlot[] {
+  const slots: LayoutSlot[] = []
+  const rowBrightness = new Array<number>(frame.width).fill(0)
+  for (let x = 0; x < frame.width; x++) {
+    let sum = 0
+    for (let y = 0; y < frame.height; y++) {
+      sum += frame.grayscale[y * frame.width + x]!
+    }
+    rowBrightness[x] = sum / (frame.height * 255)
+  }
+
+  let runStart = 0
+  let insideSilhouette = rowBrightness[0]! >= threshold
+  for (let x = 1; x < rowBrightness.length; x++) {
+    const currentInside = rowBrightness[x]! >= threshold
+    if (currentInside === insideSilhouette) continue
+    if (!insideSilhouette) {
+      const left = (runStart / frame.width) * width
+      const right = (x / frame.width) * width
+      slots.push({
+        left: Math.max(0, left + padding),
+        right: Math.min(width, right - padding),
+      })
+    }
+    runStart = x
+    insideSilhouette = currentInside
+  }
+
+  if (!insideSilhouette) {
+    slots.push({
+      left: Math.max(0, (runStart / frame.width) * width + padding),
+      right: Math.min(width, width - padding),
+    })
+  }
+
+  return slots.filter(slot => slot.right - slot.left > 8)
+}
+
+function resolveColumnSlots(
+  _frame: FramePixels,
+  width: number,
+  columnCount: number,
+  padding: number,
+): LayoutSlot[] {
+  const slots: LayoutSlot[] = []
+  const safeColumnCount = Math.max(1, columnCount)
+  const columnWidth = width / safeColumnCount
+  for (let columnIndex = 0; columnIndex < safeColumnCount; columnIndex++) {
+    slots.push({
+      left: columnIndex * columnWidth + padding,
+      right: (columnIndex + 1) * columnWidth - padding,
+    })
+  }
+  return slots.filter(slot => slot.right - slot.left > 8)
+}
+
+function resolveBandSlots(
+  frame: FramePixels,
+  width: number,
+  bandCount: number,
+  padding: number,
+): LayoutSlot[] {
+  const slots: LayoutSlot[] = []
+  const safeBandCount = Math.max(1, bandCount)
+  for (let bandIndex = 0; bandIndex < safeBandCount; bandIndex++) {
+    const yStart = Math.floor((bandIndex / safeBandCount) * frame.height)
+    const yEnd = Math.max(yStart + 1, Math.floor(((bandIndex + 1) / safeBandCount) * frame.height))
+    let brightness = 0
+    let samples = 0
+    for (let y = yStart; y < yEnd; y++) {
+      for (let x = 0; x < frame.width; x++) {
+        brightness += frame.grayscale[y * frame.width + x]! / 255
+        samples++
+      }
+    }
+    const average = samples === 0 ? 0 : brightness / samples
+    const bandWidth = Math.max(width * 0.2, width * (0.45 + average * 0.45))
+    const left = (width - bandWidth) / 2
+    slots.push({
+      left: Math.max(0, left + padding),
+      right: Math.min(width, left + bandWidth - padding),
+    })
+  }
+  return slots
+}
+
+function resolveHeadlineMaskSlots(
+  maskText: string,
+  width: number,
+  padding: number,
+): LayoutSlot[] {
+  if (maskText.trim().length === 0) {
+    return [{ left: padding, right: Math.max(padding + 8, width - padding) }]
+  }
+  const segmentCount = Math.max(1, maskText.trim().split(/\s+/).length)
+  const slots: LayoutSlot[] = []
+  const segmentWidth = width / segmentCount
+  for (let index = 0; index < segmentCount; index++) {
+    slots.push({
+      left: index * segmentWidth + padding,
+      right: (index + 1) * segmentWidth - padding,
+    })
+  }
+  return slots.filter(slot => slot.right - slot.left > 8)
+}
+
+function resolveDepthSlots(
+  width: number,
+  padding: number,
+  minFontSize: number,
+  maxFontSize: number,
+  lineIndex: number,
+): { slot: LayoutSlot, fontSize: number, lineHeight: number } {
+  const oscillation = (Math.sin(lineIndex * 0.6) + 1) / 2
+  const fontSize = minFontSize + (maxFontSize - minFontSize) * oscillation
+  const slotWidth = Math.max(width * 0.3, width * (0.4 + oscillation * 0.5))
+  const left = (width - slotWidth) / 2
+  return {
+    slot: {
+      left: Math.max(0, left + padding),
+      right: Math.min(width, left + slotWidth - padding),
+    },
+    fontSize,
+    lineHeight: Math.round(fontSize * 1.45),
+  }
+}
+
 export function fuseFrameWithPalette(
   frame: FramePixels,
   pretext: PretextModule,
@@ -475,18 +614,62 @@ export function fuseFrameWithPalette(
     options.pulseStrength ?? 0,
     previousFrameAnalysis.energy,
   )
-  const slotDefinitions = padSlots(options.maxWidth, options.slots)
-  const lines = layoutPositionedTextLines(
-    pretext,
-    visibleText,
-    options.font,
-    options.fontSize,
-    options.lineHeight,
-    slotDefinitions.map(slot => ({
-      left: slot.left,
-      right: Math.min(slot.right, slot.left + pulsedWidth),
-    })),
-  )
+  const baseSlots = options.layout === 'silhouette'
+    ? resolveSilhouetteSlots(frame, pulsedWidth, options.silhouetteThreshold ?? 0.55, options.slotPadding ?? 0)
+    : options.layout === 'columns'
+      ? resolveColumnSlots(frame, pulsedWidth, options.columnCount ?? 2, options.slotPadding ?? 0)
+      : options.layout === 'bands'
+        ? resolveBandSlots(frame, pulsedWidth, options.bandCount ?? 4, options.slotPadding ?? 0)
+        : options.layout === 'headline-mask'
+          ? resolveHeadlineMaskSlots(options.maskText ?? '', pulsedWidth, options.slotPadding ?? 0)
+          : padSlots(options.maxWidth, options.slots).map(slot => ({
+              left: slot.left,
+              right: Math.min(slot.right, slot.left + pulsedWidth),
+            }))
+
+  const lines = options.layout === 'depth'
+    ? (() => {
+        const prepared = pretext.prepareWithSegments(visibleText, options.font)
+        const depthLines: PositionedTextLine[] = []
+        let cursor: TextCursor = { segmentIndex: 0, graphemeIndex: 0 }
+        let lineIndex = 0
+        while (true) {
+          const depth = resolveDepthSlots(
+            pulsedWidth,
+            options.slotPadding ?? 0,
+            options.depthMinFontSize ?? options.fontSize,
+            options.depthMaxFontSize ?? Math.max(options.fontSize, options.fontSize * 1.5),
+            lineIndex,
+          )
+          const line = pretext.layoutNextLine(prepared, cursor, depth.slot.right - depth.slot.left)
+          if (line === null) break
+          depthLines.push({
+            text: line.text,
+            x: depth.slot.left,
+            y: lineIndex * depth.lineHeight,
+            width: line.width,
+            lineIndex,
+            start: line.start,
+            end: line.end,
+            fontFamily: options.font.split(/\s+/).slice(1).join(' ') || options.font,
+            fontSize: depth.fontSize,
+            fontWeight: 400,
+            fontStyle: 'normal',
+            lineHeight: depth.lineHeight,
+          })
+          cursor = line.end
+          lineIndex++
+        }
+        return depthLines
+      })()
+    : layoutPositionedTextLines(
+        pretext,
+        visibleText,
+        options.font,
+        options.fontSize,
+        options.lineHeight,
+        baseSlots.length === 0 ? [{ left: 0, right: pulsedWidth }] : baseSlots,
+      )
   const analysis = previousFrameAnalysis
   const previousGlyphsByIndex = new Map<number, RichGlyph>()
   if (options.previousFrame?.kind === 'rich') {
@@ -499,7 +682,8 @@ export function fuseFrameWithPalette(
   let glyphOffset = 0
   for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
     const line = lines[lineIndex]!
-    const slot = slotDefinitions[lineIndex % slotDefinitions.length]!
+    const slotPool = baseSlots.length === 0 ? [{ left: 0, right: pulsedWidth }] : baseSlots
+    const slot = slotPool[lineIndex % slotPool.length]!
     glyphs.push(
       ...positionedLineToGlyphs(
         frame,
