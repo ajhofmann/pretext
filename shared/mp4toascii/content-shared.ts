@@ -2,7 +2,6 @@ import type {
   ContentBank,
   ContentCue,
   ContentCueSource,
-  ContentOptions,
 } from './types.ts'
 
 type ParsedCue = {
@@ -122,12 +121,20 @@ export function parseDescriptionJson(input: string): ContentCue[] {
     }))
 }
 
-export function selectContentText(
-  options: ContentOptions,
+export function selectContentTextShared(
+  options: {
+    text: string
+    cues: ContentCue[]
+    banks: ContentBank[]
+    descriptions: ContentCue[]
+    cycleOnCuts: boolean
+    scriptMatch: boolean
+  },
   timestampSeconds: number,
   frameIndex: number,
   cut: boolean,
   fallbackBanks: ContentBank[] = [],
+  scriptDetector: (text: string) => string = detectScript,
 ): { text: string, cue: ContentCue | null, bank: ContentBank | null } {
   const activeCue = options.cues.find(cue => (
     timestampSeconds >= cue.startSeconds && timestampSeconds < cue.endSeconds
@@ -154,7 +161,7 @@ export function selectContentText(
     return { text: bank.text, cue: null, bank }
   }
 
-  const baseScript = detectScript(options.text)
+  const baseScript = scriptDetector(options.text)
   const bank = options.scriptMatch
     ? banks.find(candidate => candidate.script === baseScript) ?? banks[0]!
     : banks[0]!
@@ -165,5 +172,3 @@ export function selectContentText(
     bank,
   }
 }
-
-export { selectContentText as selectContentTextShared }

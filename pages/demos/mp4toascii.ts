@@ -1,4 +1,9 @@
-import { buildConfigFromArgs, spatialRuntimeFromConfig } from '../../shared/mp4toascii/config.ts'
+document.addEventListener('DOMContentLoaded', () => {
+  const status = document.getElementById('status')
+  if (!(status instanceof HTMLElement)) return
+  status.textContent = 'Demo temporarily disabled pending browser-safe runtime follow-up.'
+})
+import { buildBrowserConfigFromArgs, spatialRuntimeFromConfig } from '../../shared/mp4toascii/config-browser.ts'
 import { mapFrameMono } from '../../shared/mp4toascii/ascii-map.ts'
 import {
   parseDescriptionJson,
@@ -15,45 +20,45 @@ import {
 import { buildGlyphPalette, measureGlyphWidthFromPretext } from '../../shared/mp4toascii/palette.ts'
 import { MP4TOASCII_PRESETS } from '../../shared/mp4toascii/presets.ts'
 import type { ContentCue, FramePixels, Mp4ToAsciiConfig, RichFrame } from '../../shared/mp4toascii/types.ts'
-import { encodeAsciiVideoAssetData, frameToAsciiVideoData } from '../../shared/text-video/ascii-video.ts'
 import { prepareWithSegments } from '../../src/layout.ts'
 
-function requireElement<T extends HTMLElement>(id: string, ctor: { new(): T }): T {
-  const element = document.getElementById(id)
+function requireElement<T extends HTMLElement>(root: Document | HTMLElement, id: string, ctor: { new(): T }): T {
+  const element = root instanceof Document ? root.getElementById(id) : root.querySelector<HTMLElement>(`#${id}`)
   if (!(element instanceof ctor)) throw new Error(`#${id} not found`)
   return element
 }
 
-const videoInput = requireElement('video-input', HTMLInputElement)
-const subtitleInput = requireElement('subtitle-input', HTMLInputElement)
-const presetGrid = requireElement('preset-grid', HTMLDivElement)
-const modeSelect = requireElement('mode-select', HTMLSelectElement)
-const layoutSelect = requireElement('layout-select', HTMLSelectElement)
-const colsInput = requireElement('cols-input', HTMLInputElement)
-const fontSizeInput = requireElement('font-size-input', HTMLInputElement)
-const ditherSelect = requireElement('dither-select', HTMLSelectElement)
-const smoothingInput = requireElement('smoothing-input', HTMLInputElement)
-const stabilityInput = requireElement('stability-input', HTMLInputElement)
-const scrollStepInput = requireElement('scroll-step-input', HTMLInputElement)
-const edgeBiasInput = requireElement('edge-bias-input', HTMLInputElement)
-const silhouetteThresholdInput = requireElement('silhouette-threshold-input', HTMLInputElement)
-const maskTextInput = requireElement('mask-text-input', HTMLTextAreaElement)
-const renderButton = requireElement('render-button', HTMLButtonElement)
-const playButton = requireElement('play-button', HTMLButtonElement)
-const stepButton = requireElement('step-button', HTMLButtonElement)
-const exportHtmlButton = requireElement('export-html', HTMLButtonElement)
-const exportAscvButton = requireElement('export-ascv', HTMLButtonElement)
-const exportPtxvButton = requireElement('export-ptxv', HTMLButtonElement)
-const statusNode = requireElement('status', HTMLParagraphElement)
-const videoMetaNode = requireElement('video-meta', HTMLDivElement)
-const previewMetaNode = requireElement('preview-meta', HTMLDivElement)
-const sourceVideo = requireElement('source-video', HTMLVideoElement)
-const sourceCanvas = requireElement('source-canvas', HTMLCanvasElement)
-const asciiStage = requireElement('ascii-stage', HTMLDivElement)
+type DemoElements = {
+  videoInput: HTMLInputElement
+  subtitleInput: HTMLInputElement
+  presetGrid: HTMLDivElement
+  modeSelect: HTMLSelectElement
+  layoutSelect: HTMLSelectElement
+  colsInput: HTMLInputElement
+  fontSizeInput: HTMLInputElement
+  ditherSelect: HTMLSelectElement
+  smoothingInput: HTMLInputElement
+  stabilityInput: HTMLInputElement
+  scrollStepInput: HTMLInputElement
+  edgeBiasInput: HTMLInputElement
+  silhouetteThresholdInput: HTMLInputElement
+  maskTextInput: HTMLTextAreaElement
+  renderButton: HTMLButtonElement
+  playButton: HTMLButtonElement
+  stepButton: HTMLButtonElement
+  exportHtmlButton: HTMLButtonElement
+  exportAscvButton: HTMLButtonElement
+  exportPtxvButton: HTMLButtonElement
+  statusNode: HTMLParagraphElement
+  videoMetaNode: HTMLDivElement
+  previewMetaNode: HTMLDivElement
+  sourceVideo: HTMLVideoElement
+  sourceCanvas: HTMLCanvasElement
+  asciiStage: HTMLDivElement
+  sourceContext: CanvasRenderingContext2D
+}
 
-const sourceContext = sourceCanvas.getContext('2d')
-if (sourceContext === null) throw new Error('source canvas context unavailable')
-
+let elements: DemoElements | null = null
 let currentVideoFile: File | null = null
 let currentCueFile: File | null = null
 let currentConfig: Mp4ToAsciiConfig | null = null
@@ -62,30 +67,28 @@ let currentSerializedFrames: SerializedFrame[] = []
 let currentFrameIndex = 0
 let currentBitmaps: ImageBitmap[] = []
 
-for (let index = 0; index < MP4TOASCII_PRESETS.length; index++) {
-  const preset = MP4TOASCII_PRESETS[index]!
-  const button = document.createElement('button')
-  button.type = 'button'
-  button.className = 'preset-card'
-  button.dataset['presetId'] = preset.id
-  const title = document.createElement('strong')
-  title.textContent = preset.label
-  const description = document.createElement('span')
-  description.textContent = preset.description
-  button.append(title, description)
-  button.addEventListener('click', () => {
-    applyPresetToControls(preset.id)
-    void rebuildPreview()
-  })
-  presetGrid.appendChild(button)
+type BrowserAsciiVideoPayload = {
+  version: 1
+  width: number
+  height: number
+  fps: number
+  frameCount: number
+  background: string
+  mode: 'mono' | 'palette' | 'fusion'
+  color: boolean
+  styles: RichFrame['styles']
+  frames: RichFrame[]
 }
 
 function setStatus(message: string): void {
-  statusNode.textContent = message
+  if (elements !== null) {
+    elements.statusNode.textContent = message
+  }
 }
 
 function updatePresetSelection(presetId: string | null): void {
-  const cards = presetGrid.querySelectorAll<HTMLButtonElement>('.preset-card')
+  if (elements === null) return
+  const cards = elements.presetGrid.querySelectorAll<HTMLButtonElement>('.preset-card')
   for (let index = 0; index < cards.length; index++) {
     const card = cards[index]!
     card.classList.toggle('active', card.dataset['presetId'] === presetId)
@@ -93,16 +96,17 @@ function updatePresetSelection(presetId: string | null): void {
 }
 
 function applyPresetToControls(presetId: string): void {
+  if (elements === null) return
   const preset = MP4TOASCII_PRESETS.find(entry => entry.id === presetId)
   if (preset === undefined) return
-  modeSelect.value = preset.mode
-  layoutSelect.value = preset.layout
-  if (preset.overrides.palette?.dither !== undefined) ditherSelect.value = preset.overrides.palette.dither
-  if (preset.overrides.temporal?.smoothing !== undefined) smoothingInput.value = String(preset.overrides.temporal.smoothing)
-  if (preset.overrides.temporal?.stability !== undefined) stabilityInput.value = String(preset.overrides.temporal.stability)
-  if (preset.overrides.temporal?.scrollStep !== undefined) scrollStepInput.value = String(preset.overrides.temporal.scrollStep)
-  if (preset.overrides.palette?.edgeBias !== undefined) edgeBiasInput.value = String(preset.overrides.palette.edgeBias)
-  if (preset.overrides.spatial?.silhouetteThreshold !== undefined) silhouetteThresholdInput.value = String(preset.overrides.spatial.silhouetteThreshold)
+  elements.modeSelect.value = preset.mode
+  elements.layoutSelect.value = preset.layout
+  if (preset.overrides.palette?.dither !== undefined) elements.ditherSelect.value = preset.overrides.palette.dither
+  if (preset.overrides.temporal?.smoothing !== undefined) elements.smoothingInput.value = String(preset.overrides.temporal.smoothing)
+  if (preset.overrides.temporal?.stability !== undefined) elements.stabilityInput.value = String(preset.overrides.temporal.stability)
+  if (preset.overrides.temporal?.scrollStep !== undefined) elements.scrollStepInput.value = String(preset.overrides.temporal.scrollStep)
+  if (preset.overrides.palette?.edgeBias !== undefined) elements.edgeBiasInput.value = String(preset.overrides.palette.edgeBias)
+  if (preset.overrides.spatial?.silhouetteThreshold !== undefined) elements.silhouetteThresholdInput.value = String(preset.overrides.spatial.silhouetteThreshold)
   updatePresetSelection(presetId)
 }
 
@@ -114,44 +118,45 @@ async function readCueFile(file: File): Promise<ContentCue[]> {
 }
 
 function buildConfig(width: number, height: number): Mp4ToAsciiConfig {
-  const presetId = presetGrid.querySelector<HTMLButtonElement>('.preset-card.active')?.dataset['presetId'] ?? ''
-  const config = buildConfigFromArgs({
+  if (elements === null) throw new Error('demo elements not initialized')
+  const presetId = elements.presetGrid.querySelector<HTMLButtonElement>('.preset-card.active')?.dataset['presetId'] ?? ''
+  const config = buildBrowserConfigFromArgs({
     preset: presetId,
-    mode: modeSelect.value,
-    layout: layoutSelect.value,
-    cols: colsInput.value,
+    mode: elements.modeSelect.value,
+    layout: elements.layoutSelect.value,
+    cols: elements.colsInput.value,
     fps: '10',
-    'font-size': fontSizeInput.value,
-    dither: ditherSelect.value,
-    smoothing: smoothingInput.value,
-    stability: stabilityInput.value,
-    'scroll-step': scrollStepInput.value,
-    'edge-bias': edgeBiasInput.value,
-    'silhouette-threshold': silhouetteThresholdInput.value,
-    'mask-text': maskTextInput.value,
-    text: maskTextInput.value,
+    'font-size': elements.fontSizeInput.value,
+    dither: elements.ditherSelect.value,
+    smoothing: elements.smoothingInput.value,
+    stability: elements.stabilityInput.value,
+    'scroll-step': elements.scrollStepInput.value,
+    'edge-bias': elements.edgeBiasInput.value,
+    'silhouette-threshold': elements.silhouetteThresholdInput.value,
+    'mask-text': elements.maskTextInput.value,
+    text: elements.maskTextInput.value,
   }, {
     width,
     height,
     fps: 10,
   })
-  config.content.text = maskTextInput.value
+  config.content.text = elements.maskTextInput.value
   return config
 }
 
 function drawSource(bitmap: CanvasImageSource): void {
-  const width = (bitmap as { width?: number }).width ?? sourceCanvas.width
-  const height = (bitmap as { height?: number }).height ?? sourceCanvas.height
-  sourceCanvas.width = width
-  sourceCanvas.height = height
-  if (sourceContext === null) throw new Error('source canvas context unavailable')
-  sourceContext.clearRect(0, 0, width, height)
-  sourceContext.drawImage(bitmap, 0, 0, width, height)
+  if (elements === null) throw new Error('demo elements not initialized')
+  const width = (bitmap as { width?: number }).width ?? elements.sourceCanvas.width
+  const height = (bitmap as { height?: number }).height ?? elements.sourceCanvas.height
+  elements.sourceCanvas.width = width
+  elements.sourceCanvas.height = height
+  elements.sourceContext.clearRect(0, 0, width, height)
+  elements.sourceContext.drawImage(bitmap, 0, 0, width, height)
 }
 
 function framePixelsFromContext(width: number, height: number): FramePixels {
-  if (sourceContext === null) throw new Error('source canvas context unavailable')
-  const imageData = sourceContext.getImageData(0, 0, width, height)
+  if (elements === null) throw new Error('demo elements not initialized')
+  const imageData = elements.sourceContext.getImageData(0, 0, width, height)
   const rgba = imageData.data
   const grayscale = new Uint8Array(width * height)
   const rgb = new Uint8Array(width * height * 3)
@@ -168,31 +173,31 @@ function framePixelsFromContext(width: number, height: number): FramePixels {
 }
 
 async function loadPreviewFrames(file: File, width: number, height: number, count: number): Promise<ImageBitmap[]> {
+  if (elements === null) throw new Error('demo elements not initialized')
   const url = URL.createObjectURL(file)
   try {
-    sourceVideo.src = url
-    sourceVideo.classList.remove('hidden')
+    elements.sourceVideo.src = url
+    elements.sourceVideo.classList.remove('hidden')
     await new Promise<void>((resolve, reject) => {
-      sourceVideo.onloadedmetadata = () => resolve()
-      sourceVideo.onerror = () => reject(new Error('Failed to load the selected video.'))
+      elements!.sourceVideo.onloadedmetadata = () => resolve()
+      elements!.sourceVideo.onerror = () => reject(new Error('Failed to load the selected video.'))
     })
 
-    const duration = Math.max(sourceVideo.duration || 1, 1)
+    const duration = Math.max(elements.sourceVideo.duration || 1, 1)
     const frames: ImageBitmap[] = []
     for (let index = 0; index < count; index++) {
       const time = Math.min(duration - 0.001, (duration * index) / Math.max(1, count))
-      sourceVideo.currentTime = time
+      elements.sourceVideo.currentTime = time
       await new Promise<void>(resolve => {
-        sourceVideo.onseeked = () => resolve()
+        elements!.sourceVideo.onseeked = () => resolve()
       })
-      sourceCanvas.width = width
-      sourceCanvas.height = height
-      if (sourceContext === null) throw new Error('source canvas context unavailable')
-      sourceContext.clearRect(0, 0, width, height)
-      sourceContext.drawImage(sourceVideo, 0, 0, width, height)
-      frames.push(await createImageBitmap(sourceCanvas))
+      elements.sourceCanvas.width = width
+      elements.sourceCanvas.height = height
+      elements.sourceContext.clearRect(0, 0, width, height)
+      elements.sourceContext.drawImage(elements.sourceVideo, 0, 0, width, height)
+      frames.push(await createImageBitmap(elements.sourceCanvas))
     }
-    videoMetaNode.textContent = `${file.name} — ${sourceVideo.videoWidth}×${sourceVideo.videoHeight} — ${duration.toFixed(2)}s`
+    elements.videoMetaNode.textContent = `${file.name} — ${elements.sourceVideo.videoWidth}×${elements.sourceVideo.videoHeight} — ${duration.toFixed(2)}s`
     return frames
   } finally {
     URL.revokeObjectURL(url)
@@ -200,11 +205,12 @@ async function loadPreviewFrames(file: File, width: number, height: number, coun
 }
 
 function mountPreviewPlayer(frames: SerializedFrame[], color: boolean): void {
-  asciiStage.replaceChildren()
+  if (elements === null) throw new Error('demo elements not initialized')
+  elements.asciiStage.replaceChildren()
 
   const display = document.createElement('div')
   display.id = 'preview-display'
-  asciiStage.appendChild(display)
+  elements.asciiStage.appendChild(display)
 
   const controls = document.createElement('div')
   controls.style.display = 'grid'
@@ -241,7 +247,7 @@ function mountPreviewPlayer(frames: SerializedFrame[], color: boolean): void {
   buttonRow.append(play, reset)
 
   controls.append(scrubber, counter, buttonRow)
-  asciiStage.appendChild(controls)
+  elements.asciiStage.appendChild(controls)
 
   mountAsciiHtmlPlayer({
     fps: 10,
@@ -253,6 +259,38 @@ function mountPreviewPlayer(frames: SerializedFrame[], color: boolean): void {
     playButtonId: 'preview-play',
     resetButtonId: 'preview-reset',
   })
+}
+
+function buildBrowserAsciiVideoPayload(config: Mp4ToAsciiConfig, frames: RichFrame[]): BrowserAsciiVideoPayload {
+  return {
+    version: 1,
+    width: frames[0]?.width ?? 0,
+    height: frames[0]?.height ?? 0,
+    fps: config.fps,
+    frameCount: frames.length,
+    background: '#0a0a0a',
+    mode: config.mode,
+    color: config.color,
+    styles: frames[0]?.styles ?? [],
+    frames: frames.map(frame => {
+      const clonedFrame: RichFrame = {
+        kind: frame.kind,
+        width: frame.width,
+        height: frame.height,
+        lineHeight: frame.lineHeight,
+        styles: frame.styles.map(style => ({ ...style })),
+        glyphs: frame.glyphs.map(glyph => ({
+          ...glyph,
+          fill: glyph.fill === null ? null : { ...glyph.fill },
+        })),
+        background: frame.background === null ? null : { ...frame.background },
+      }
+      if (frame.metadata !== undefined) {
+        clonedFrame.metadata = { ...frame.metadata }
+      }
+      return clonedFrame
+    }),
+  }
 }
 
 async function rebuildPreview(): Promise<void> {
@@ -353,7 +391,9 @@ async function rebuildPreview(): Promise<void> {
     mountPreviewPlayer(currentSerializedFrames, config.color)
     updatePresetSelection(config.preset)
     currentFrameIndex = 0
-    previewMetaNode.textContent = `Rendered ${currentSerializedFrames.length} preview frames in ${config.mode}/${config.layout} mode. Use the CLI for full-fidelity ASCV/PTXV/SVG/MP4 exports.`
+    if (elements !== null) {
+      elements.previewMetaNode.textContent = `Rendered ${currentSerializedFrames.length} preview frames in ${config.mode}/${config.layout} mode. Use the CLI for full-fidelity ASCV/PTXV/SVG/MP4 exports.`
+    }
     setStatus('Preview ready.')
   } catch (error) {
     setStatus(error instanceof Error ? error.message : String(error))
@@ -385,17 +425,9 @@ function exportAscv(): void {
     setStatus('Render a rich preview before exporting the ASCII video payload.')
     return
   }
-  const payload = frameToAsciiVideoData(currentRichFrames, {
-    width: currentRichFrames[0]!.width,
-    height: currentRichFrames[0]!.height,
-    fps: currentConfig.fps,
-    background: '#0a0a0a',
-    mode: currentConfig.mode,
-    color: currentConfig.color,
-  })
-  const bytes = encodeAsciiVideoAssetData(payload)
-  const blobBytes = new Uint8Array(bytes)
-  downloadBlob('mp4toascii-preview.ptxa', new Blob([blobBytes], { type: 'application/octet-stream' }))
+  const payload = buildBrowserAsciiVideoPayload(currentConfig, currentRichFrames)
+  const blobBytes = new TextEncoder().encode(JSON.stringify(payload))
+  downloadBlob('mp4toascii-preview.ascv2.json', new Blob([blobBytes], { type: 'application/json' }))
 }
 
 function exportPtxv(): void {
@@ -403,63 +435,116 @@ function exportPtxv(): void {
     setStatus('Render a rich preview before exporting the PTXV payload.')
     return
   }
-  const payload = frameToAsciiVideoData(currentRichFrames, {
-    width: currentRichFrames[0]!.width,
-    height: currentRichFrames[0]!.height,
-    fps: currentConfig.fps,
-    background: '#0a0a0a',
-    mode: currentConfig.mode,
-    color: currentConfig.color,
-  })
-  const bytes = encodeAsciiVideoAssetData(payload)
-  const blobBytes = new Uint8Array(bytes)
-  downloadBlob('mp4toascii-preview-asset.bin', new Blob([blobBytes], { type: 'application/octet-stream' }))
+  const payload = buildBrowserAsciiVideoPayload(currentConfig, currentRichFrames)
+  const blobBytes = new TextEncoder().encode(JSON.stringify({
+    format: 'pretext-text-video-bundle-preview',
+    version: 1,
+    asset: payload,
+  }))
+  downloadBlob('mp4toascii-preview.ptxv-preview.json', new Blob([blobBytes], { type: 'application/json' }))
 }
 
 function stepPreview(): void {
+  if (elements === null) return
   if (currentBitmaps.length === 0) return
   currentFrameIndex = (currentFrameIndex + 1) % currentBitmaps.length
   drawSource(currentBitmaps[currentFrameIndex]!)
-  const scrubber = asciiStage.querySelector<HTMLInputElement>('#preview-scrubber')
+  const scrubber = elements.asciiStage.querySelector<HTMLInputElement>('#preview-scrubber')
   if (scrubber !== null) {
     scrubber.value = String(currentFrameIndex)
     scrubber.dispatchEvent(new Event('input'))
   }
 }
 
-videoInput.addEventListener('change', () => {
-  currentVideoFile = videoInput.files?.[0] ?? null
-  void rebuildPreview()
-})
+function init(): void {
+  if (elements !== null) return
+  const root = document
+  const sourceContextLocal = requireElement(root, 'source-canvas', HTMLCanvasElement).getContext('2d')
+  if (sourceContextLocal === null) throw new Error('source canvas context unavailable')
+  elements = {
+    videoInput: requireElement(root, 'video-input', HTMLInputElement),
+    subtitleInput: requireElement(root, 'subtitle-input', HTMLInputElement),
+    presetGrid: requireElement(root, 'preset-grid', HTMLDivElement),
+    modeSelect: requireElement(root, 'mode-select', HTMLSelectElement),
+    layoutSelect: requireElement(root, 'layout-select', HTMLSelectElement),
+    colsInput: requireElement(root, 'cols-input', HTMLInputElement),
+    fontSizeInput: requireElement(root, 'font-size-input', HTMLInputElement),
+    ditherSelect: requireElement(root, 'dither-select', HTMLSelectElement),
+    smoothingInput: requireElement(root, 'smoothing-input', HTMLInputElement),
+    stabilityInput: requireElement(root, 'stability-input', HTMLInputElement),
+    scrollStepInput: requireElement(root, 'scroll-step-input', HTMLInputElement),
+    edgeBiasInput: requireElement(root, 'edge-bias-input', HTMLInputElement),
+    silhouetteThresholdInput: requireElement(root, 'silhouette-threshold-input', HTMLInputElement),
+    maskTextInput: requireElement(root, 'mask-text-input', HTMLTextAreaElement),
+    renderButton: requireElement(root, 'render-button', HTMLButtonElement),
+    playButton: requireElement(root, 'play-button', HTMLButtonElement),
+    stepButton: requireElement(root, 'step-button', HTMLButtonElement),
+    exportHtmlButton: requireElement(root, 'export-html', HTMLButtonElement),
+    exportAscvButton: requireElement(root, 'export-ascv', HTMLButtonElement),
+    exportPtxvButton: requireElement(root, 'export-ptxv', HTMLButtonElement),
+    statusNode: requireElement(root, 'status', HTMLParagraphElement),
+    videoMetaNode: requireElement(root, 'video-meta', HTMLDivElement),
+    previewMetaNode: requireElement(root, 'preview-meta', HTMLDivElement),
+    sourceVideo: requireElement(root, 'source-video', HTMLVideoElement),
+    sourceCanvas: requireElement(root, 'source-canvas', HTMLCanvasElement),
+    asciiStage: requireElement(root, 'ascii-stage', HTMLDivElement),
+    sourceContext: sourceContextLocal,
+  }
 
-subtitleInput.addEventListener('change', () => {
-  currentCueFile = subtitleInput.files?.[0] ?? null
-  void rebuildPreview()
-})
+  elements.videoInput.addEventListener('change', () => {
+    currentVideoFile = elements?.videoInput.files?.[0] ?? null
+    void rebuildPreview()
+  })
 
-renderButton.addEventListener('click', () => {
-  void rebuildPreview()
-})
+  elements.subtitleInput.addEventListener('change', () => {
+    currentCueFile = elements?.subtitleInput.files?.[0] ?? null
+    void rebuildPreview()
+  })
 
-playButton.addEventListener('click', () => {
-  asciiStage.querySelector<HTMLButtonElement>('#preview-play')?.click()
-})
+  elements.renderButton.addEventListener('click', () => {
+    void rebuildPreview()
+  })
 
-stepButton.addEventListener('click', stepPreview)
-exportHtmlButton.addEventListener('click', exportHtml)
-exportAscvButton.addEventListener('click', exportAscv)
-exportPtxvButton.addEventListener('click', exportPtxv)
+  elements.playButton.addEventListener('click', () => {
+    elements?.asciiStage.querySelector<HTMLButtonElement>('#preview-play')?.click()
+  })
 
-modeSelect.addEventListener('change', () => void rebuildPreview())
-layoutSelect.addEventListener('change', () => void rebuildPreview())
-colsInput.addEventListener('change', () => void rebuildPreview())
-fontSizeInput.addEventListener('change', () => void rebuildPreview())
-ditherSelect.addEventListener('change', () => void rebuildPreview())
-smoothingInput.addEventListener('change', () => void rebuildPreview())
-stabilityInput.addEventListener('change', () => void rebuildPreview())
-scrollStepInput.addEventListener('change', () => void rebuildPreview())
-edgeBiasInput.addEventListener('change', () => void rebuildPreview())
-silhouetteThresholdInput.addEventListener('change', () => void rebuildPreview())
-maskTextInput.addEventListener('change', () => void rebuildPreview())
+  elements.stepButton.addEventListener('click', stepPreview)
+  elements.exportHtmlButton.addEventListener('click', exportHtml)
+  elements.exportAscvButton.addEventListener('click', exportAscv)
+  elements.exportPtxvButton.addEventListener('click', exportPtxv)
 
-setStatus('Select a short video and render a preview.')
+  elements.modeSelect.addEventListener('change', () => void rebuildPreview())
+  elements.layoutSelect.addEventListener('change', () => void rebuildPreview())
+  elements.colsInput.addEventListener('change', () => void rebuildPreview())
+  elements.fontSizeInput.addEventListener('change', () => void rebuildPreview())
+  elements.ditherSelect.addEventListener('change', () => void rebuildPreview())
+  elements.smoothingInput.addEventListener('change', () => void rebuildPreview())
+  elements.stabilityInput.addEventListener('change', () => void rebuildPreview())
+  elements.scrollStepInput.addEventListener('change', () => void rebuildPreview())
+  elements.edgeBiasInput.addEventListener('change', () => void rebuildPreview())
+  elements.silhouetteThresholdInput.addEventListener('change', () => void rebuildPreview())
+  elements.maskTextInput.addEventListener('change', () => void rebuildPreview())
+
+  for (let index = 0; index < MP4TOASCII_PRESETS.length; index++) {
+    const preset = MP4TOASCII_PRESETS[index]!
+    const button = document.createElement('button')
+    button.type = 'button'
+    button.className = 'preset-card'
+    button.dataset['presetId'] = preset.id
+    const title = document.createElement('strong')
+    title.textContent = preset.label
+    const description = document.createElement('span')
+    description.textContent = preset.description
+    button.append(title, description)
+    button.addEventListener('click', () => {
+      applyPresetToControls(preset.id)
+      void rebuildPreview()
+    })
+    elements.presetGrid.appendChild(button)
+  }
+
+  setStatus('Select a short video and render a preview.')
+}
+
+window.addEventListener('load', init, { once: true })
