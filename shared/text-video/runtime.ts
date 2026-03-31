@@ -48,6 +48,9 @@ export {
 } from './sample.ts'
 export {
   decodeAsciiVideoAsset,
+  encodeAsciiVideoAssetData,
+  frameToAsciiVideoData,
+  renderAsciiVideoFrameToSvg,
   encodeAsciiVideoAsset,
   renderAsciiVideoLayerSvg,
 } from './ascii-video.ts'

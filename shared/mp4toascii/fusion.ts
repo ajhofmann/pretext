@@ -98,6 +98,55 @@ type StabilityCell = {
   glyph: GlyphPaletteEntry | null
 }
 
+function styleKey(style: GlyphStyle): string {
+  return JSON.stringify({
+    fontFamily: style.fontFamily,
+    fontSize: style.fontSize,
+    fontWeight: style.fontWeight,
+    fontStyle: style.fontStyle,
+    lineHeight: style.lineHeight,
+  })
+}
+
+function fontFromStyle(style: GlyphStyle): string {
+  return `${style.fontStyle === 'italic' ? 'italic ' : ''}${style.fontWeight} ${style.fontSize}px ${style.fontFamily}`
+}
+
+function collectLineStyles(lines: PositionedTextLine[]): GlyphStyle[] {
+  const styles: GlyphStyle[] = []
+  const seen = new Set<string>()
+  for (let index = 0; index < lines.length; index++) {
+    const line = lines[index]!
+    const style: GlyphStyle = {
+      fontFamily: line.fontFamily,
+      fontSize: line.fontSize,
+      fontWeight: line.fontWeight,
+      fontStyle: line.fontStyle,
+      lineHeight: line.lineHeight,
+    }
+    const key = styleKey(style)
+    if (seen.has(key)) continue
+    seen.add(key)
+    styles.push(style)
+  }
+  return styles
+}
+
+function styleIndexForLine(styles: GlyphStyle[], line: PositionedTextLine): number {
+  const key = styleKey({
+    fontFamily: line.fontFamily,
+    fontSize: line.fontSize,
+    fontWeight: line.fontWeight,
+    fontStyle: line.fontStyle,
+    lineHeight: line.lineHeight,
+  })
+  const index = styles.findIndex(style => styleKey(style) === key)
+  if (index < 0) {
+    throw new Error(`Missing style entry for line "${line.text}".`)
+  }
+  return index
+}
+
 function createMeasureContext(): CanvasRenderingContext2D | null {
   const measureCanvas = typeof OffscreenCanvas !== 'undefined'
     ? new OffscreenCanvas(1, 1)
@@ -587,33 +636,16 @@ function resolveDepthSlots(
   }
 }
 
-export function fuseFrameWithPalette(
+function resolveLinesForLayout(
   frame: FramePixels,
   pretext: PretextModule,
+  text: string,
   options: RichFusionOptions,
-): RichFrame {
-  const styles = options.styles ?? uniqueGlyphStyles(options.palette)
-  const previousMetadata = options.previousFrame?.metadata
-  const previousFrameAnalysis = options.frameAnalysis ?? computeFrameAnalysis(
-    frame,
-    options.previousPixels ?? null,
-    Math.max(1, Math.round(options.maxWidth / Math.max(1, options.paletteOptions?.targetCellWidth ?? options.fontSize))),
-    Math.max(1, Math.round(frame.height / Math.max(1, options.lineHeight))),
-    options.cutThreshold ?? 0.35,
-  )
-  const scrollOffset = (previousMetadata?.scrollOffset ?? 0) + computeScrollDelta(
-    options.scrollStep ?? 0,
-    options.scrollModulation ?? 'none',
-    previousFrameAnalysis,
-  )
-  const visibleText = scrollOffset > 0 && scrollOffset < options.text.length
-    ? `${options.text.slice(scrollOffset)} ${options.text}`
-    : options.text
-  const pulsedWidth = computePulseWidth(
-    options.maxWidth,
-    options.pulseStrength ?? 0,
-    previousFrameAnalysis.energy,
-  )
+  pulsedWidth: number,
+): {
+  lines: PositionedTextLine[]
+  slotPool: LayoutSlot[]
+} {
   const baseSlots = options.layout === 'silhouette'
     ? resolveSilhouetteSlots(frame, pulsedWidth, options.silhouetteThreshold ?? 0.55, options.slotPadding ?? 0)
     : options.layout === 'columns'
@@ -629,7 +661,7 @@ export function fuseFrameWithPalette(
 
   const lines = options.layout === 'depth'
     ? (() => {
-        const prepared = pretext.prepareWithSegments(visibleText, options.font)
+        const prepared = pretext.prepareWithSegments(text, options.font)
         const depthLines: PositionedTextLine[] = []
         let cursor: TextCursor = { segmentIndex: 0, graphemeIndex: 0 }
         let lineIndex = 0
@@ -664,12 +696,128 @@ export function fuseFrameWithPalette(
       })()
     : layoutPositionedTextLines(
         pretext,
-        visibleText,
+        text,
         options.font,
         options.fontSize,
         options.lineHeight,
         baseSlots.length === 0 ? [{ left: 0, right: pulsedWidth }] : baseSlots,
       )
+
+  return {
+    lines,
+    slotPool: baseSlots.length === 0 ? [{ left: 0, right: pulsedWidth }] : baseSlots,
+  }
+}
+
+function positionedLineToSourceGlyphs(
+  frame: FramePixels,
+  line: PositionedTextLine,
+  styles: GlyphStyle[],
+  options: RichFusionOptions,
+  previousGlyphsByIndex: Map<number, RichGlyph>,
+  glyphOffset: number,
+  totalTextHeight: number,
+): RichGlyph[] {
+  const glyphs: RichGlyph[] = []
+  const ctx = createMeasureContext()
+  const lineStyleIndex = styleIndexForLine(styles, line)
+  const lineFont = fontFromStyle(line)
+  if (ctx !== null) {
+    ctx.font = lineFont
+  }
+
+  let x = line.x
+  const samples: Array<{ char: string, x: number, pixelIndex: number, brightness: number }> = []
+  for (let charIndex = 0; charIndex < line.text.length; charIndex++) {
+    const char = line.text[charIndex]!
+    const { pixelIndex, brightness: rawBrightness } = sampleFrameBrightness(
+      frame,
+      x,
+      line.y,
+      options.maxWidth,
+      totalTextHeight,
+      options.invert,
+    )
+    samples.push({
+      char,
+      x,
+      pixelIndex,
+      brightness: applyOrderedDither(
+        rawBrightness,
+        charIndex,
+        line.lineIndex,
+        options.dither ?? 'none',
+      ),
+    })
+    x += ctx !== null ? ctx.measureText(char).width : line.fontSize * 0.6
+  }
+
+  const previousBrightnessSeries = samples.map((_, index) => previousGlyphsByIndex.get(glyphOffset + index)?.brightness ?? 0)
+  const stableBrightnessSeries = samples.map((sample, index) => {
+    const previousGlyph = previousGlyphsByIndex.get(glyphOffset + index)
+    if (previousGlyph === undefined) return sample.brightness
+    return Math.abs(previousGlyph.brightness - sample.brightness) < (options.stability ?? 0)
+      ? previousGlyph.brightness
+      : sample.brightness
+  })
+  const smoothedBrightnessSeries = smoothBrightnessSeries(
+    previousBrightnessSeries,
+    stableBrightnessSeries,
+    options.smoothing ?? 0,
+  )
+
+  for (let index = 0; index < samples.length; index++) {
+    const sample = samples[index]!
+    const brightness = smoothedBrightnessSeries[index]!
+    glyphs.push({
+      char: sample.char,
+      x: sample.x,
+      y: line.y,
+      styleIndex: lineStyleIndex,
+      opacity: brightness,
+      fill: glyphColor(frame, sample.pixelIndex, options.color, brightness),
+      brightness,
+      lineIndex: line.lineIndex,
+    })
+  }
+
+  return glyphs
+}
+
+export function fuseFrameWithPalette(
+  frame: FramePixels,
+  pretext: PretextModule,
+  options: RichFusionOptions,
+): RichFrame {
+  const styles = options.styles ?? uniqueGlyphStyles(options.palette)
+  const previousMetadata = options.previousFrame?.metadata
+  const previousFrameAnalysis = options.frameAnalysis ?? computeFrameAnalysis(
+    frame,
+    options.previousPixels ?? null,
+    Math.max(1, Math.round(options.maxWidth / Math.max(1, options.paletteOptions?.targetCellWidth ?? options.fontSize))),
+    Math.max(1, Math.round(frame.height / Math.max(1, options.lineHeight))),
+    options.cutThreshold ?? 0.35,
+  )
+  const scrollOffset = (previousMetadata?.scrollOffset ?? 0) + computeScrollDelta(
+    options.scrollStep ?? 0,
+    options.scrollModulation ?? 'none',
+    previousFrameAnalysis,
+  )
+  const visibleText = scrollOffset > 0 && scrollOffset < options.text.length
+    ? `${options.text.slice(scrollOffset)} ${options.text}`
+    : options.text
+  const pulsedWidth = computePulseWidth(
+    options.maxWidth,
+    options.pulseStrength ?? 0,
+    previousFrameAnalysis.energy,
+  )
+  const { lines, slotPool } = resolveLinesForLayout(
+    frame,
+    pretext,
+    visibleText,
+    options,
+    pulsedWidth,
+  )
   const analysis = previousFrameAnalysis
   const previousGlyphsByIndex = new Map<number, RichGlyph>()
   if (options.previousFrame?.kind === 'rich') {
@@ -682,7 +830,6 @@ export function fuseFrameWithPalette(
   let glyphOffset = 0
   for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
     const line = lines[lineIndex]!
-    const slotPool = baseSlots.length === 0 ? [{ left: 0, right: pulsedWidth }] : baseSlots
     const slot = slotPool[lineIndex % slotPool.length]!
     glyphs.push(
       ...positionedLineToGlyphs(
@@ -712,6 +859,91 @@ export function fuseFrameWithPalette(
       frameIndex: options.frameIndex ?? 0,
       timestampSeconds: options.timestampSeconds ?? 0,
       mode: 'palette',
+      layout: options.layout ?? 'grid',
+      energy: analysis.energy,
+      averageBrightness: analysis.averageBrightness,
+      motion: analysis.motion,
+      cut: analysis.cut,
+      scrollOffset,
+      ...options.metadata,
+    },
+  }
+}
+
+export function fuseFrameWithRoutedText(
+  frame: FramePixels,
+  pretext: PretextModule,
+  options: RichFusionOptions,
+): RichFrame {
+  const previousMetadata = options.previousFrame?.metadata
+  const analysis = options.frameAnalysis ?? computeFrameAnalysis(
+    frame,
+    options.previousPixels ?? null,
+    Math.max(1, Math.round(options.maxWidth / Math.max(1, options.paletteOptions?.targetCellWidth ?? options.fontSize))),
+    Math.max(1, Math.round(frame.height / Math.max(1, options.lineHeight))),
+    options.cutThreshold ?? 0.35,
+  )
+  const scrollOffset = (previousMetadata?.scrollOffset ?? 0) + computeScrollDelta(
+    options.scrollStep ?? 0,
+    options.scrollModulation ?? 'none',
+    analysis,
+  )
+  const visibleText = scrollOffset > 0 && scrollOffset < options.text.length
+    ? `${options.text.slice(scrollOffset)} ${options.text}`
+    : options.text
+  const pulsedWidth = computePulseWidth(
+    options.maxWidth,
+    options.pulseStrength ?? 0,
+    analysis.energy,
+  )
+  const { lines } = resolveLinesForLayout(
+    frame,
+    pretext,
+    visibleText,
+    options,
+    pulsedWidth,
+  )
+  const styles = collectLineStyles(lines)
+  const totalTextHeight = lines.length === 0
+    ? options.lineHeight
+    : lines[lines.length - 1]!.y + lines[lines.length - 1]!.lineHeight
+  const previousGlyphsByIndex = new Map<number, RichGlyph>()
+  if (options.previousFrame?.kind === 'rich') {
+    for (let index = 0; index < options.previousFrame.glyphs.length; index++) {
+      previousGlyphsByIndex.set(index, options.previousFrame.glyphs[index]!)
+    }
+  }
+
+  const glyphs: RichGlyph[] = []
+  let glyphOffset = 0
+  for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+    const line = lines[lineIndex]!
+    glyphs.push(
+      ...positionedLineToSourceGlyphs(
+        frame,
+        line,
+        styles,
+        options,
+        previousGlyphsByIndex,
+        glyphOffset,
+        totalTextHeight,
+      ),
+    )
+    glyphOffset += line.text.length
+  }
+
+  return {
+    kind: 'rich',
+    width: options.maxWidth,
+    height: Math.max(options.lineHeight, lines.length === 0 ? options.lineHeight : totalTextHeight),
+    lineHeight: options.lineHeight,
+    styles,
+    glyphs,
+    background: options.background ?? null,
+    metadata: {
+      frameIndex: options.frameIndex ?? 0,
+      timestampSeconds: options.timestampSeconds ?? 0,
+      mode: 'fusion',
       layout: options.layout ?? 'grid',
       energy: analysis.energy,
       averageBrightness: analysis.averageBrightness,

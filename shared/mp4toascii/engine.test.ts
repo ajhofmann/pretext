@@ -1,6 +1,8 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
+import { mkdirSync, writeFileSync } from 'node:fs'
 import { parseDescriptionJson, parseSrt, parseVtt, selectContentText } from './content.ts'
 import { encodeAsciiFrames, encodeRichFrames, parseAscv, serializeAscv } from './ascv.ts'
+import { buildConfigFromArgs } from './config.ts'
 import { applyOrderedDither } from './dither.ts'
 import { analyzeEdges } from './edge.ts'
 import { mapFrameMono } from './ascii-map.ts'
@@ -51,6 +53,14 @@ class TestOffscreenCanvas {
 
 beforeAll(() => {
   Reflect.set(globalThis, 'OffscreenCanvas', TestOffscreenCanvas)
+  mkdirSync('/workspace/tmp', { recursive: true })
+  writeFileSync('/workspace/tmp/mp4toascii-test.srt', `1
+00:00:00,000 --> 00:00:01,000
+hello subtitle
+`, 'utf-8')
+  writeFileSync('/workspace/tmp/mp4toascii-test.json', JSON.stringify([
+    { startSeconds: 0, endSeconds: 1, text: 'hello description' },
+  ]), 'utf-8')
 })
 
 function makeFramePixels(
@@ -186,6 +196,25 @@ Hello world
 
     expect(selection.text).toBe('Opening image')
     expect(selection.cue?.source).toBe('description')
+  })
+
+  test('config builder applies presets and sidecar content files', () => {
+    const config = buildConfigFromArgs({
+      mode: 'palette',
+      preset: 'matrix-rain',
+      text: 'hello world',
+      cols: '80',
+      rows: '24',
+      fps: '12',
+      'subtitle-file': '/workspace/tmp/mp4toascii-test.srt',
+      'description-file': '/workspace/tmp/mp4toascii-test.json',
+    })
+
+    expect(config.mode).toBe('palette')
+    expect(config.layout).toBe('bands')
+    expect(config.temporal.scrollModulation).toBe('motion')
+    expect(config.content.cues.length).toBeGreaterThanOrEqual(1)
+    expect(config.content.descriptions.length).toBeGreaterThanOrEqual(1)
   })
 
   test('glyph palette selection can favor directional glyphs', () => {
