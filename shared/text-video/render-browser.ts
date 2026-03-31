@@ -3,6 +3,7 @@ import { textVideoProjectSchema } from './schema.ts'
 import type { Layer, TextVideoProject } from './schema.ts'
 import { colorWithOpacity, svgElement, svgVoidElement, xmlEscape } from './svg.ts'
 import type {
+  EvaluatedAsciiVideoLayer,
   EvaluatedGroupLayer,
   EvaluatedImageLayer,
   EvaluatedLayer,
@@ -288,6 +289,10 @@ function renderImageLayer(context: BrowserRenderContext, layer: EvaluatedImageLa
   )
 }
 
+function renderAsciiVideoLayer(_context: BrowserRenderContext, _layer: EvaluatedAsciiVideoLayer): string {
+  return ''
+}
+
 function renderGroupLayer(context: BrowserRenderContext, layer: EvaluatedGroupLayer, sceneTime: number): string {
   const children: string[] = []
   for (let index = 0; index < layer.children.length; index++) {
@@ -301,6 +306,7 @@ function renderEvaluatedLayer(context: BrowserRenderContext, layer: EvaluatedLay
   if (layer.type === 'text') return renderTextLayer(context, layer)
   if (layer.type === 'shape') return renderShapeLayer(layer)
   if (layer.type === 'image') return renderImageLayer(context, layer)
+  if (layer.type === 'ascii-video') return renderAsciiVideoLayer(context, layer)
   if (layer.type === 'group') return renderGroupLayer(context, layer, sceneTime)
   return ''
 }

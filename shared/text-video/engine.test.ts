@@ -12,6 +12,7 @@ import {
   type Layer,
   type TextVideoProject,
 } from './runtime.ts'
+import type { AsciiVideoAssetPayload } from './types.ts'
 
 const TEST_ROOT = '/workspace/tmp/text-video-tests'
 const SAMPLE_ASSET_FILES = [
@@ -107,5 +108,109 @@ describe('text-video engine', () => {
     const project = parseProjectJson(contents)
     expect(project.scenes.length).toBe(2)
     expect(project.video.durationSeconds).toBe(8)
+  })
+
+  test('ascii video asset renders inside svg frames', async () => {
+    const asciiVideo: AsciiVideoAssetPayload = {
+      version: 1,
+      width: 320,
+      height: 120,
+      fps: 12,
+      background: '#000000',
+      frameCount: 1,
+      mode: 'fusion',
+      color: true,
+      styles: [{
+        fontFamily: 'DejaVu Sans Mono',
+        fontSize: 18,
+        fontWeight: 700,
+        fontStyle: 'normal',
+        lineHeight: 22,
+      }],
+      frames: [{
+        kind: 'rich',
+        width: 320,
+        height: 120,
+        lineHeight: 22,
+        background: null,
+        styles: [{
+          fontFamily: 'DejaVu Sans Mono',
+          fontSize: 18,
+          fontWeight: 700,
+          fontStyle: 'normal',
+          lineHeight: 22,
+        }],
+        glyphs: [{
+          char: 'A',
+          x: 24,
+          y: 32,
+          styleIndex: 0,
+          opacity: 1,
+          brightness: 1,
+          fill: { r: 0, g: 255, b: 0 },
+          lineIndex: 0,
+        }],
+      }],
+    }
+
+    const project = parseProjectJson(JSON.stringify({
+      format: 'pretext-text-video',
+      version: 2,
+      info: { name: 'ascii-video-test' },
+      video: {
+        width: 320,
+        height: 120,
+        fps: 12,
+        durationSeconds: 1,
+        background: '#101010',
+      },
+      assets: [{
+        id: 'ascii-asset',
+        type: 'ascii-video',
+        src: 'ascii-video.json',
+        embed: true,
+        mimeType: 'application/json',
+        width: 320,
+        height: 120,
+        fps: 12,
+      }],
+      scenes: [{
+        id: 'scene',
+        start: 0,
+        duration: 1,
+        layers: [{
+          id: 'ascii-layer',
+          type: 'ascii-video',
+          assetId: 'ascii-asset',
+          x: 0,
+          y: 0,
+          width: 320,
+          height: 120,
+          opacity: 1,
+          start: 0,
+          rotation: 0,
+          scaleX: 1,
+          scaleY: 1,
+        }],
+      }],
+    }))
+
+    const projectPath = path.join(TEST_ROOT, 'ascii-video-project.json')
+    const asciiVideoPath = path.join(TEST_ROOT, 'ascii-video.json')
+    const { encodeAsciiVideoAssetData } = await import('./ascii-video.ts')
+    const asciiBytes = encodeAsciiVideoAssetData(asciiVideo)
+    await writeFile(projectPath, JSON.stringify(project, null, 2))
+    await writeFile(asciiVideoPath, asciiBytes)
+    const container = await encodeProjectToContainer(project, projectPath)
+
+    const decoded = decodeProjectContainer(container)
+    const svg = await renderFrameSvg(decoded.project, 0, {
+      absoluteProjectPath: projectPath,
+      projectPath,
+    })
+
+    expect(decoded.project.assets.some(asset => asset.type === 'ascii-video')).toBe(true)
+    expect(svg.includes('<text')).toBe(true)
+    expect(svg.includes('A')).toBe(true)
   })
 })

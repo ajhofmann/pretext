@@ -121,6 +121,18 @@ export const imageLayerSchema = z.object({
   clipRadius: z.number().min(0).default(0),
 })
 
+export const asciiVideoLayerSchema = z.object({
+  ...baseLayerShape,
+  type: z.literal('ascii-video'),
+  assetId: z.string().min(1),
+  width: animatedNumberSchema,
+  height: animatedNumberSchema,
+  anchorX: z.enum(['left', 'center', 'right']).default('left'),
+  anchorY: z.enum(['top', 'center', 'bottom']).default('top'),
+  fit: z.enum(['contain', 'cover', 'stretch']).default('contain'),
+  showBackground: z.boolean().default(true),
+})
+
 export const rectShapeLayerSchema = z.object({
   ...baseLayerShape,
   type: z.literal('shape'),
@@ -168,6 +180,7 @@ export const shapeLayerSchema = z.discriminatedUnion('shape', [
 
 export type TextLayer = z.infer<typeof textLayerSchema>
 export type ImageLayer = z.infer<typeof imageLayerSchema>
+export type AsciiVideoLayer = z.infer<typeof asciiVideoLayerSchema>
 export type ShapeLayer = z.infer<typeof shapeLayerSchema>
 export type GroupLayer = {
   id: string
@@ -182,7 +195,7 @@ export type GroupLayer = {
   scaleY: z.infer<typeof animatedNumberSchema>
   children: Layer[]
 }
-export type Layer = TextLayer | ImageLayer | ShapeLayer | GroupLayer
+export type Layer = TextLayer | ImageLayer | AsciiVideoLayer | ShapeLayer | GroupLayer
 
 export const groupLayerSchema: z.ZodTypeAny = z.lazy(() =>
   z.object({
@@ -193,7 +206,7 @@ export const groupLayerSchema: z.ZodTypeAny = z.lazy(() =>
 )
 
 export const layerSchema: z.ZodTypeAny = z.lazy(() =>
-  z.union([textLayerSchema, imageLayerSchema, shapeLayerSchema, groupLayerSchema]),
+  z.union([textLayerSchema, imageLayerSchema, asciiVideoLayerSchema, shapeLayerSchema, groupLayerSchema]),
 )
 
 export const assetSchema = z.discriminatedUnion('type', [
@@ -215,6 +228,13 @@ export const assetSchema = z.discriminatedUnion('type', [
   z.object({
     id: z.string().min(1),
     type: z.literal('audio'),
+    src: z.string().min(1),
+    embed: z.boolean().optional(),
+    mimeType: z.string().optional(),
+  }),
+  z.object({
+    id: z.string().min(1),
+    type: z.literal('ascii-video'),
     src: z.string().min(1),
     embed: z.boolean().optional(),
     mimeType: z.string().optional(),
@@ -274,6 +294,7 @@ export type TextPadding = z.infer<typeof paddingSchema>
 export type FontAsset = Extract<z.infer<typeof assetSchema>, { type: 'font' }>
 export type ImageAsset = Extract<z.infer<typeof assetSchema>, { type: 'image' }>
 export type AudioAsset = Extract<z.infer<typeof assetSchema>, { type: 'audio' }>
+export type AsciiVideoAsset = Extract<z.infer<typeof assetSchema>, { type: 'ascii-video' }>
 export type TextVideoAsset = z.infer<typeof assetSchema>
 export type SceneTransition = z.infer<typeof sceneTransitionSchema>
 export type TextVideoScene = z.infer<typeof sceneSchema>

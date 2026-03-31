@@ -8,8 +8,8 @@ import type {
   DecodedProjectContainer,
   ResolvedAssetSource,
 } from './types.ts'
-import type { ImageAsset, Layer, TextVideoAsset, TextVideoProject } from './schema.ts'
-import { isGroupLayer, isImageLayer } from './type-guards.ts'
+import type { AsciiVideoAsset, ImageAsset, Layer, TextVideoAsset, TextVideoProject } from './schema.ts'
+import { isAsciiVideoLayer, isGroupLayer, isImageLayer } from './type-guards.ts'
 
 const TEXT_VIDEO_PREFIX = 'text-video://asset/'
 
@@ -168,8 +168,29 @@ export async function resolveImageHref(
   return asDataUri(source.data, source.mimeType ?? 'image/png')
 }
 
+export async function resolveAsciiVideoData(
+  asset: AsciiVideoAsset,
+  context: AssetContext = {},
+): Promise<string> {
+  const source = await resolveAssetSource(asset, context)
+  if (source === null) {
+    throw new Error(`Unable to resolve ascii-video asset "${asset.id}"`)
+  }
+  if (source.kind === 'filesystem') {
+    if (isExternalUrl(source.path)) {
+      throw new Error(`ascii-video asset "${asset.id}" must resolve to a local or embedded file`)
+    }
+    return await readFile(source.path, 'utf-8')
+  }
+  return Buffer.from(source.data).toString('utf-8')
+}
+
 function collectLayerAssetIds(layer: Layer, assetIds: Set<string>): void {
   if (isImageLayer(layer)) {
+    assetIds.add(layer.assetId)
+    return
+  }
+  if (isAsciiVideoLayer(layer)) {
     assetIds.add(layer.assetId)
     return
   }

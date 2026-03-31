@@ -9,6 +9,7 @@ import {
   createRichPlayerScript,
 } from './html-player.ts'
 import type { RichFrame } from './types.ts'
+import { frameToAsciiVideoData, renderAsciiVideoFrameToSvg } from '../text-video/ascii-video.ts'
 
 export function asciiFrameToAnsi(frame: AsciiFrame): string {
   const lines: string[] = []
@@ -175,6 +176,75 @@ ${createRichPlayerScript()}
 
   mkdirSync(dirname(outputPath), { recursive: true })
   writeFileSync(outputPath, html, 'utf-8')
+}
+
+export function renderRichFrameToSvg(
+  frame: RichFrame,
+  options: {
+    width?: number
+    height?: number
+    background?: string
+  } = {},
+): string {
+  const width = options.width ?? Math.max(1, Math.round(frame.width))
+  const height = options.height ?? Math.max(1, Math.round(frame.height))
+  const asciiVideo = frameToAsciiVideoData([frame], {
+    width,
+    height,
+    fps: 1,
+    background: options.background ?? '#0a0a0a',
+  })
+  return renderAsciiVideoFrameToSvg(asciiVideo, 0, {
+    x: 0,
+    y: 0,
+    width,
+    height,
+    opacity: 1,
+    rotation: 0,
+    scaleX: 1,
+    scaleY: 1,
+  })
+}
+
+export function renderRichFramesToMp4(
+  frames: RichFrame[],
+  fps: number,
+  outputPath: string,
+  options: {
+    width?: number
+    height?: number
+    background?: string
+  } = {},
+): void {
+  const { writeFileSync: writePngSync, rmSync } = require('node:fs') as typeof import('node:fs')
+  const { Resvg } = require('@resvg/resvg-js') as typeof import('@resvg/resvg-js')
+  const { tmpdir } = require('node:os') as typeof import('node:os')
+  const width = options.width ?? Math.max(...frames.map(frame => Math.max(1, Math.round(frame.width))), 1)
+  const height = options.height ?? Math.max(...frames.map(frame => Math.max(1, Math.round(frame.height))), 1)
+  const background = options.background ?? '#0a0a0a'
+  const tempDir = join(tmpdir(), `mp4toascii-rich-render-${Date.now()}`)
+  mkdirSync(tempDir, { recursive: true })
+
+  try {
+    for (let index = 0; index < frames.length; index++) {
+      const svg = renderRichFrameToSvg(frames[index]!, { width, height, background })
+      const png = new Resvg(svg, {
+        fitTo: { mode: 'width', value: width },
+      }).render().asPng()
+      writePngSync(join(tempDir, `${String(index).padStart(5, '0')}.png`), png)
+    }
+
+    execFileSync('ffmpeg', [
+      '-y',
+      '-framerate', String(fps),
+      '-i', join(tempDir, '%05d.png'),
+      '-c:v', 'libx264',
+      '-pix_fmt', 'yuv420p',
+      outputPath,
+    ], { stdio: 'pipe' })
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true })
+  }
 }
 
 export function renderAsciiToMp4(
