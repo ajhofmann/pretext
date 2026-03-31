@@ -133,7 +133,6 @@ export function writeFusionHtmlPage(
 ): void {
   const title = options.title ?? 'mp4toascii — text fusion'
   const bgColor = options.bgColor ?? '#0a0a0a'
-  const fontFamily = options.fontFamily ?? '"Georgia", serif'
   const fontSize = options.fontSize ?? 14
   const color = options.color ?? false
 
@@ -146,14 +145,15 @@ export function writeFusionHtmlPage(
 <title>${title}</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { background: ${bgColor}; color: #e0e0e0; font-family: ${fontFamily}; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 20px; }
+body { background: ${bgColor}; color: #e0e0e0; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 20px; }
 h1 { font-size: 18px; margin-bottom: 12px; color: #888; font-family: sans-serif; }
-#display { font-size: ${fontSize}px; line-height: ${Math.round(fontSize * 1.4)}px; white-space: pre-wrap; max-width: 90vw; }
+#display { font-family: "Courier New", Courier, monospace; font-size: ${fontSize}px; line-height: ${Math.round(fontSize * 1.4)}px; white-space: pre; max-width: 90vw; letter-spacing: 0; }
+#display span { font-family: inherit !important; }
 .controls { margin: 16px 0; display: flex; gap: 12px; align-items: center; font-family: sans-serif; }
 button { background: #222; color: #ccc; border: 1px solid #333; padding: 8px 16px; cursor: pointer; border-radius: 4px; }
 button:hover { background: #333; }
 input[type=range] { width: 300px; }
-span { color: #666; font-size: 13px; }
+.controls span { color: #666; font-size: 13px; }
 </style>
 </head>
 <body>
