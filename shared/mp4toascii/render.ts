@@ -3,7 +3,12 @@ import { mkdirSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 
 import type { AsciiFrame } from './ascii-map.ts'
-import type { FusionFrame } from './fusion.ts'
+import {
+  createAsciiPlayerScript,
+  createRichFrameHtmlData,
+  createRichPlayerScript,
+} from './html-player.ts'
+import type { RichFrame } from './types.ts'
 
 export function asciiFrameToAnsi(frame: AsciiFrame): string {
   const lines: string[] = []
@@ -24,41 +29,46 @@ export function asciiFrameToAnsi(frame: AsciiFrame): string {
   return lines.join('\n')
 }
 
-export function fusionFrameToAnsi(frame: FusionFrame, color: boolean): string {
-  const lineMap = new Map<number, Array<{ char: string, brightness: number, color: { r: number, g: number, b: number } | null }>>()
-
-  for (const ch of frame.characters) {
-    const lineIdx = Math.round(ch.y / frame.lineHeight)
-    if (!lineMap.has(lineIdx)) lineMap.set(lineIdx, [])
-    lineMap.get(lineIdx)!.push(ch)
-  }
-
-  const sortedLines = [...lineMap.entries()].sort((a, b) => a[0] - b[0])
-  const lines: string[] = []
-
-  for (const [, chars] of sortedLines) {
-    let line = ''
-    for (const ch of chars) {
-      if (ch.brightness < 0.05) {
-        line += ' '
-        continue
-      }
-
-      const gray = Math.round(ch.brightness * 255)
-      if (color && ch.color !== null) {
-        const r = Math.round(ch.color.r * ch.brightness)
-        const g = Math.round(ch.color.g * ch.brightness)
-        const b = Math.round(ch.color.b * ch.brightness)
-        line += `\x1b[38;2;${r};${g};${b}m${ch.char}\x1b[0m`
-      } else {
-        line += `\x1b[38;2;${gray};${gray};${gray}m${ch.char}\x1b[0m`
-      }
+export function richFrameToAnsi(frame: RichFrame, color: boolean): string {
+  const lineMap = new Map<number, typeof frame.glyphs>()
+  for (let index = 0; index < frame.glyphs.length; index++) {
+    const glyph = frame.glyphs[index]!
+    const existing = lineMap.get(glyph.lineIndex)
+    if (existing === undefined) {
+      lineMap.set(glyph.lineIndex, [glyph])
+    } else {
+      existing.push(glyph)
     }
-    lines.push(line)
   }
+
+  const lines = [...lineMap.entries()]
+    .sort((left, right) => left[0] - right[0])
+    .map(([, glyphs]) => {
+      const ordered = [...glyphs].sort((left, right) => left.x - right.x)
+      let line = ''
+      for (let index = 0; index < ordered.length; index++) {
+        const glyph = ordered[index]!
+        if (glyph.opacity < 0.05) {
+          line += ' '
+          continue
+        }
+        const gray = Math.round(glyph.opacity * 255)
+        if (color && glyph.fill !== null) {
+          const r = Math.round(glyph.fill.r * glyph.opacity)
+          const g = Math.round(glyph.fill.g * glyph.opacity)
+          const b = Math.round(glyph.fill.b * glyph.opacity)
+          line += `\x1b[38;2;${r};${g};${b}m${glyph.char}\x1b[0m`
+        } else {
+          line += `\x1b[38;2;${gray};${gray};${gray}m${glyph.char}\x1b[0m`
+        }
+      }
+      return line
+    })
 
   return lines.join('\n')
 }
+
+export const fusionFrameToAnsi = richFrameToAnsi
 
 export function writeHtmlPage(
   frames: string[],
@@ -105,21 +115,7 @@ span { color: #666; font-size: 13px; }
 <script>
 const frames = ${JSON.stringify(escaped)};
 const fps = ${fps};
-const display = document.getElementById('display');
-const scrub = document.getElementById('scrub');
-const counter = document.getElementById('counter');
-const playBtn = document.getElementById('play');
-let idx = 0, playing = false, timer = null;
-function show(i) { idx = i; display.textContent = frames[i]; scrub.value = i; counter.textContent = i + ' / ' + frames.length; }
-show(0);
-playBtn.addEventListener('click', () => {
-  playing = !playing;
-  playBtn.textContent = playing ? 'Pause' : 'Play';
-  if (playing) { timer = setInterval(() => { idx = (idx + 1) % frames.length; show(idx); }, 1000 / fps); }
-  else { clearInterval(timer); }
-});
-document.getElementById('reset').addEventListener('click', () => { playing = false; playBtn.textContent = 'Play'; clearInterval(timer); show(0); });
-scrub.addEventListener('input', () => { show(Number(scrub.value)); });
+${createAsciiPlayerScript()}
 </script>
 </body>
 </html>`
@@ -129,7 +125,7 @@ scrub.addEventListener('input', () => { show(Number(scrub.value)); });
 }
 
 export function writeFusionHtmlPage(
-  frames: FusionFrame[],
+  frames: RichFrame[],
   fps: number,
   outputPath: string,
   options: { title?: string, bgColor?: string, fontFamily?: string, fontSize?: number, color?: boolean } = {},
@@ -140,14 +136,7 @@ export function writeFusionHtmlPage(
   const fontSize = options.fontSize ?? 14
   const color = options.color ?? false
 
-  const serialized = frames.map(f => f.characters.map(c => ({
-    c: c.char,
-    b: Math.round(c.brightness * 255),
-    r: c.color !== null ? c.color.r : undefined,
-    g: c.color !== null ? c.color.g : undefined,
-    bl: c.color !== null ? c.color.b : undefined,
-    li: Math.round(c.y / f.lineHeight),
-  })))
+  const serialized = createRichFrameHtmlData(frames)
 
   const html = `<!doctype html>
 <html lang="en">
@@ -179,47 +168,7 @@ span { color: #666; font-size: 13px; }
 const frames = ${JSON.stringify(serialized)};
 const fps = ${fps};
 const useColor = ${color};
-const display = document.getElementById('display');
-const scrub = document.getElementById('scrub');
-const counter = document.getElementById('counter');
-const playBtn = document.getElementById('play');
-let idx = 0, playing = false, timer = null;
-function show(i) {
-  idx = i;
-  const chars = frames[i];
-  let html = '';
-  let currentLine = -1;
-  for (const c of chars) {
-    if (c.li !== currentLine) {
-      if (currentLine >= 0) html += '\\n';
-      currentLine = c.li;
-    }
-    if (c.b < 13) { html += ' '; continue; }
-    let r, g, b;
-    if (useColor && c.r !== undefined) {
-      r = Math.round(c.r * c.b / 255);
-      g = Math.round(c.g * c.b / 255);
-      b = Math.round(c.bl * c.b / 255);
-    } else {
-      r = g = b = c.b;
-    }
-    const ch = c.c === '<' ? '&lt;' : c.c === '>' ? '&gt;' : c.c === '&' ? '&amp;' : c.c;
-    const fw = c.b > 180 ? 'font-weight:bold;' : '';
-    html += '<span style="color:rgb('+r+','+g+','+b+');'+fw+'">'+ch+'</span>';
-  }
-  display.innerHTML = html;
-  scrub.value = i;
-  counter.textContent = i + ' / ' + frames.length;
-}
-show(0);
-playBtn.addEventListener('click', () => {
-  playing = !playing;
-  playBtn.textContent = playing ? 'Pause' : 'Play';
-  if (playing) timer = setInterval(() => { idx = (idx + 1) % frames.length; show(idx); }, 1000 / fps);
-  else clearInterval(timer);
-});
-document.getElementById('reset').addEventListener('click', () => { playing = false; playBtn.textContent = 'Play'; clearInterval(timer); show(0); });
-scrub.addEventListener('input', () => show(Number(scrub.value)));
+${createRichPlayerScript()}
 </script>
 </body>
 </html>`
